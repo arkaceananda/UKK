@@ -3,19 +3,16 @@
 namespace App\Livewire\Customer;
 
 use App\Enums\MetodeBayar;
-use App\Enums\StatusMeja;
 use App\Enums\StatusMenu;
 use App\Models\KategoriMenu;
 use App\Models\Meja;
 use App\Models\Menu as MenuModel;
-use App\Services\ImageCacheService;
 use App\Services\OrderService;
 use Illuminate\Support\Collection;
-use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-class Menu extends Component
+class Checkout extends Component
 {
     public array $cart = [];
 
@@ -27,7 +24,7 @@ class Menu extends Component
 
     public string $notes = '';
 
-    public string $metodeBayar = 'tunai';
+    public string $metodeBayar = '';
 
     public ?int $editingQuantityId = null;
 
@@ -42,7 +39,6 @@ class Menu extends Component
     public function mount(): void
     {
         $this->cart = session('burjo_cart', []);
-        $this->selectedMejaId = '5';
 
         $firstCategory = KategoriMenu::whereHas('menu', fn ($q) => $q->where('status', StatusMenu::Tersedia))
             ->first();
@@ -54,6 +50,11 @@ class Menu extends Component
         if ($this->selectedMejaId === '' && request()->has('meja')) {
             $this->selectedMejaId = request('meja');
         }
+    }
+
+    public function backToMenu(): void
+    {
+        $this->redirect(route('customer.menu', ['meja' => $this->selectedMejaId]));
     }
 
     public function addToCart(int $menuId): void
@@ -89,7 +90,6 @@ class Menu extends Component
                 'harga' => (float) $menu->harga,
                 'jumlah' => 1,
                 'foto' => $menu->foto,
-                'is_available' => $menu->isAvailable(),
             ];
         }
 
@@ -97,7 +97,7 @@ class Menu extends Component
         session(['burjo_cart' => $this->cart]);
     }
 
-    public function decrementQuantity(int $menuId): void
+    public function removeItem(int $menuId): void
     {
         $cartKey = null;
         foreach ($this->cart as $key => $item) {
@@ -107,73 +107,69 @@ class Menu extends Component
             }
         }
 
-        if ($cartKey !== null) {
-            if ($this->cart[$cartKey]['jumlah'] > 1) {
-                $this->cart[$cartKey]['jumlah']--;
-            } else {
-                unset($this->cart[$cartKey]);
-            }
-            $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-            session(['burjo_cart' => $this->cart]);
+        if ($cartKey === null) {
+            return;
         }
-    }
 
-    public function removeFromCart(int $menuId): void
-    {
-        foreach ($this->cart as $key => $item) {
-            if (isset($item['menu_id']) && $item['menu_id'] == $menuId) {
-                unset($this->cart[$key]);
-            }
-        }
+        unset($this->cart[$cartKey]);
 
         $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
         session(['burjo_cart' => $this->cart]);
     }
 
-    public function startEditingQuantity(int $menuId): void
+    public function removeFromCart(int $menuId): void
     {
-        $this->editingQuantityId = $menuId;
-        $this->editingQuantity = $this->cart[$menuId]['jumlah'] ?? 1;
+        $this->removeItem($menuId);
     }
 
-    public function confirmQuantity(): void
+    public function updateQuantity(int $menuId, int $quantity): void
     {
-        if ($this->editingQuantityId === null) {
+        $cartKey = null;
+        foreach ($this->cart as $key => $item) {
+            if (isset($item['menu_id']) && $item['menu_id'] == $menuId) {
+                $cartKey = $key;
+                break;
+            }
+        }
+
+        if ($cartKey === null) {
             return;
         }
 
-        $menuId = $this->editingQuantityId;
-
-        if ($this->editingQuantity <= 0) {
-            $this->removeFromCart($menuId);
-            $this->editingQuantityId = null;
+        if ($quantity <= 0) {
+            $this->removeItem($menuId);
 
             return;
         }
 
         $menu = MenuModel::findOrFail($menuId);
 
-        if ($this->editingQuantity > $menu->stok) {
+        if ($quantity > $menu->stok) {
             $this->dispatch('notify', message: 'Stok tidak cukup', type: 'error');
 
             return;
         }
 
-        $this->cart[$menuId]['jumlah'] = $this->editingQuantity;
-        $this->editingQuantityId = null;
+        $this->cart[$cartKey]['jumlah'] = $quantity;
 
         $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
         session(['burjo_cart' => $this->cart]);
     }
 
-    public function cancelEditingQuantity(): void
+    public function selectCategory(string $categoryId): void
     {
-        $this->editingQuantityId = null;
+        $this->selectedCategory = $categoryId;
     }
 
     public function checkout(): void
     {
         if (empty($this->cart)) {
+            return;
+        }
+
+        if ($this->metodeBayar === '') {
+            $this->dispatch('notify', message: 'Pilih metode pembayaran terlebih dahulu', type: 'error');
+
             return;
         }
 
@@ -197,6 +193,7 @@ class Menu extends Component
 
         $this->cart = [];
         $this->notes = '';
+        $this->metodeBayar = '';
         $this->editingQuantityId = null;
         session(['burjo_cart' => $this->cart]);
 
@@ -211,6 +208,36 @@ class Menu extends Component
         session(['burjo_cart' => $this->cart]);
 
         $this->dispatch('cart-updated', count: 0, total: 0);
+    }
+
+    public function getBurjoNameProperty(): string
+    {
+        return config('app.name', 'BurjoOrder');
+    }
+
+    public function getNomorMejaProperty(): ?string
+    {
+        if ($this->selectedMejaId === '') {
+            return null;
+        }
+
+        $meja = Meja::find($this->selectedMejaId);
+
+        return $meja?->nomor;
+    }
+
+    public function getSelectedMejaProperty(): ?Meja
+    {
+        if ($this->selectedMejaId === '') {
+            return null;
+        }
+
+        return Meja::find($this->selectedMejaId);
+    }
+
+    public function getSubtotalProperty(): float
+    {
+        return $this->cartTotal;
     }
 
     public function getCartTotalProperty(): float
@@ -237,6 +264,10 @@ class Menu extends Component
             ->where('status', StatusMenu::Tersedia)
             ->where('stok', '>', 0);
 
+        if ($this->selectedCategory !== '') {
+            $query->where('kategori_id', $this->selectedCategory);
+        }
+
         if ($this->searchQuery !== '') {
             $query->where('nama', 'ilike', '%'.$this->searchQuery.'%');
         }
@@ -246,9 +277,7 @@ class Menu extends Component
             ->orderBy('nama')
             ->get();
 
-        $imageService = app(ImageCacheService::class);
-
-        return $menus->map(function ($menu) use ($imageService) {
+        return $menus->map(function ($menu) {
             return [
                 'id' => $menu->id,
                 'nama' => $menu->nama,
@@ -256,22 +285,23 @@ class Menu extends Component
                 'harga' => (float) $menu->harga,
                 'foto' => $menu->foto,
                 'kategori' => $menu->kategori?->nama,
-                'cachedImage' => $menu->foto ? $imageService->getCachedUrl($menu->foto) : '',
                 'is_available' => $menu->isAvailable(),
             ];
         });
     }
 
-    #[Layout('layouts.customer')]
-    #[Title('Menu')]
+    #[Title('Checkout')]
     public function render()
     {
-        return view('livewire.customer.menu', [
+        return view('livewire.customer.checkout', [
             'categories' => $this->categories,
             'menus' => $this->menus,
-            'meja' => Meja::where('status', StatusMeja::Aktif)->get(),
+            'burjoName' => $this->burjoName,
+            'nomorMeja' => $this->nomorMeja,
+            'meja' => $this->selectedMeja,
             'cartCount' => $this->cartCount,
             'cartTotal' => $this->cartTotal,
+            'subtotal' => $this->subtotal,
         ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\StatusMenu;
 use App\Models\KategoriMenu;
 use App\Models\Menu;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class CartTest extends TestCase
@@ -21,7 +22,7 @@ class CartTest extends TestCase
             'stok' => 10,
         ]);
 
-        \Livewire\Livewire::test(\App\Livewire\Customer\Menu::class)
+        Livewire::test(\App\Livewire\Customer\Menu::class)
             ->call('addToCart', $menu->id)
             ->assertSet('cart.'.$menu->id.'.jumlah', 1);
     }
@@ -35,7 +36,7 @@ class CartTest extends TestCase
             'stok' => 10,
         ]);
 
-        \Livewire\Livewire::test(\App\Livewire\Customer\Menu::class)
+        Livewire::test(\App\Livewire\Customer\Menu::class)
             ->call('addToCart', $menu->id)
             ->call('removeFromCart', $menu->id)
             ->assertSet('cart', []);

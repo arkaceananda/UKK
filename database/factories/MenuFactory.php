@@ -14,10 +14,20 @@ class MenuFactory extends Factory
     public function definition(): array
     {
         $names = [
-            'Nasi Goreng', 'Mie Ayam', 'Soto Ayam', 'Gado-gado', 'Rendang',
-            'Es Teh Manis', 'Es Jeruk', 'Kopi Hitam', 'Cappuccino', 'Matcha Latte',
-            'Keripik Singkong', 'Pisang Goreng', 'Tahu Crispy', 'Tempe Mendoan',
-            'Es Krim Vanilla', 'Puding Coklat', 'Brownies', 'Cheesecake',
+            'Nasi Goreng Spesial', 'Nasi Goreng Seafood', 'Nasi Goreng Ayam', 'Nasi Goreng Kampung',
+            'Mie Ayam Jamur', 'Mie Ayam Pangsit', 'Mie Ayam Bakso', 'Mie Goreng Jawa',
+            'Soto Ayam Lamongan', 'Soto Betawi', 'Soto Padang', 'Soto Banjar',
+            'Ayam Goreng Kremes', 'Ayam Bakar Madu', 'Ayam Penyet Sambal', 'Ayam Kalasan',
+            'Rendang Sapi', 'Gulai Ayam', 'Gulai Kambing', 'Opor Ayam',
+            'Gado-Gado', 'Pecel Lele', 'Ikan Bakar', 'Udang Goreng Tepung',
+            'Es Teh Manis', 'Es Jeruk Segar', 'Es Cendol', 'Es Dawet',
+            'Kopi Hitam Tubruk', 'Kopi Susu', 'Cappuccino', 'Latte',
+            'Matcha Latte', 'Taro Latte', 'Smoothie Berry', 'Smoothie Mango',
+            'Keripik Singkong', 'Keripik Kentang', 'Keripik Pisang', 'Keripik Tempe',
+            'Pisang Goreng', 'Bakwan Jagung', 'Tahu Isi', 'Tahu Crispy',
+            'Martabak Mini', 'Risoles Mayo', 'Lumpia Semarang', 'Sosis Bakar',
+            'Tempe Mendoan', 'Sate Ayam', 'Siomay', 'Batagor',
+            'Brownies', 'Cheesecake', 'Puding Coklat', 'Es Krim Vanilla',
         ];
 
         return [
