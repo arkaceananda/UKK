@@ -40,7 +40,7 @@ class DatabaseSeeder extends Seeder
         $minuman = KategoriMenu::factory()->create(['nama' => 'Minuman']);
         $snack = KategoriMenu::factory()->create(['nama' => 'Snack']);
 
-        // --- Menu ---
+        // --- Menu: Makanan ---
         $nasiGoreng = Menu::factory()->create([
             'kategori_id' => $makanan->id, 'nama' => 'Nasi Goreng Spesial',
             'harga' => 22000, 'stok' => 30, 'deskripsi' => 'Nasi goreng dengan telur dan ayam',
@@ -53,7 +53,28 @@ class DatabaseSeeder extends Seeder
             'kategori_id' => $makanan->id, 'nama' => 'Soto Ayam Lamongan',
             'harga' => 20000, 'stok' => 20, 'deskripsi' => 'Soto ayam khas Lamongan',
         ]);
+        $ayamGoreng = Menu::factory()->create([
+            'kategori_id' => $makanan->id, 'nama' => 'Ayam Goreng Kremes',
+            'harga' => 28000, 'stok' => 25, 'deskripsi' => 'Ayam goreng dengan kremes renyah',
+        ]);
+        $rendang = Menu::factory()->create([
+            'kategori_id' => $makanan->id, 'nama' => 'Rendang Sapi',
+            'harga' => 35000, 'stok' => 15, 'deskripsi' => 'Rendang daging sapi khas Padang',
+        ]);
+        $gadoGado = Menu::factory()->create([
+            'kategori_id' => $makanan->id, 'nama' => 'Gado-Gado',
+            'harga' => 17000, 'stok' => 20, 'deskripsi' => 'Salad sayur dengan bumbu kacang',
+        ]);
+        $pecelLele = Menu::factory()->create([
+            'kategori_id' => $makanan->id, 'nama' => 'Pecel Lele',
+            'harga' => 25000, 'stok' => 18, 'deskripsi' => 'Lele goreng dengan sambal',
+        ]);
+        $nasgorSeafood = Menu::factory()->create([
+            'kategori_id' => $makanan->id, 'nama' => 'Nasi Goreng Seafood',
+            'harga' => 30000, 'stok' => 12, 'deskripsi' => 'Nasi goreng dengan cumi, udang, kepiting',
+        ]);
 
+        // --- Menu: Minuman ---
         $esTeh = Menu::factory()->create([
             'kategori_id' => $minuman->id, 'nama' => 'Es Teh Manis',
             'harga' => 8000, 'stok' => 50, 'deskripsi' => 'Teh manis dingin',
@@ -66,7 +87,28 @@ class DatabaseSeeder extends Seeder
             'kategori_id' => $minuman->id, 'nama' => 'Matcha Latte',
             'harga' => 25000, 'stok' => 15, 'deskripsi' => 'Matcha latte premium',
         ]);
+        $esJeruk = Menu::factory()->create([
+            'kategori_id' => $minuman->id, 'nama' => 'Es Jeruk Segar',
+            'harga' => 10000, 'stok' => 40, 'deskripsi' => 'Jeruk peras dengan es',
+        ]);
+        $cappuccino = Menu::factory()->create([
+            'kategori_id' => $minuman->id, 'nama' => 'Cappuccino',
+            'harga' => 20000, 'stok' => 25, 'deskripsi' => 'Kopi cappuccino dengan busa susu',
+        ]);
+        $smoothieBerry = Menu::factory()->create([
+            'kategori_id' => $minuman->id, 'nama' => 'Smoothie Berry',
+            'harga' => 28000, 'stok' => 20, 'deskripsi' => 'Smoothie campuran stroberi, blueberry, raspberry',
+        ]);
+        $esCendol = Menu::factory()->create([
+            'kategori_id' => $minuman->id, 'nama' => 'Es Cendol',
+            'harga' => 15000, 'stok' => 30, 'deskripsi' => 'Es cendol tradisional dengan santan',
+        ]);
+        $lemonTea = Menu::factory()->create([
+            'kategori_id' => $minuman->id, 'nama' => 'Lemon Tea',
+            'harga' => 12000, 'stok' => 35, 'deskripsi' => 'Teh lemon segar',
+        ]);
 
+        // --- Menu: Snack ---
         $keripik = Menu::factory()->create([
             'kategori_id' => $snack->id, 'nama' => 'Keripik Singkong',
             'harga' => 10000, 'stok' => 35, 'deskripsi' => 'Keripik singkong renyah',
@@ -74,6 +116,30 @@ class DatabaseSeeder extends Seeder
         $pisangGoreng = Menu::factory()->create([
             'kategori_id' => $snack->id, 'nama' => 'Pisang Goreng',
             'harga' => 12000, 'stok' => 20, 'deskripsi' => 'Pisang goreng crispy',
+        ]);
+        $bakwan = Menu::factory()->create([
+            'kategori_id' => $snack->id, 'nama' => 'Bakwan Jagung',
+            'harga' => 8000, 'stok' => 40, 'deskripsi' => 'Bakwan jagung goreng',
+        ]);
+        $tahuIsi = Menu::factory()->create([
+            'kategori_id' => $snack->id, 'nama' => 'Tahu Isi',
+            'harga' => 10000, 'stok' => 30, 'deskripsi' => 'Tahu goreng isi sayuran',
+        ]);
+        $martabakMini = Menu::factory()->create([
+            'kategori_id' => $snack->id, 'nama' => 'Martabak Mini',
+            'harga' => 15000, 'stok' => 25, 'deskripsi' => 'Martabak mini manis',
+        ]);
+        $risoles = Menu::factory()->create([
+            'kategori_id' => $snack->id, 'nama' => 'Risoles Mayo',
+            'harga' => 12000, 'stok' => 28, 'deskripsi' => 'Risoles dengan isian mayo dan ayam',
+        ]);
+        $lumpia = Menu::factory()->create([
+            'kategori_id' => $snack->id, 'nama' => 'Lumpia Semarang',
+            'harga' => 18000, 'stok' => 22, 'deskripsi' => 'Lumpia khas Semarang',
+        ]);
+        $sosisBakar = Menu::factory()->create([
+            'kategori_id' => $snack->id, 'nama' => 'Sosis Bakar',
+            'harga' => 15000, 'stok' => 30, 'deskripsi' => 'Sosis bakar dengan saus',
         ]);
 
         // --- Meja ---

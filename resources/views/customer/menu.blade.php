@@ -1,3 +1,3 @@
-<x-customer-layout>
-    <livewire:customer.menu />
-</x-customer-layout>
+@extends('layouts.customer')
+
+<livewire:customer.menu />
