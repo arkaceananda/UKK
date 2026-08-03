@@ -39,7 +39,7 @@ class Pesanan extends Model
 
     public function details(): HasMany
     {
-        return $this->hasMany(DetailPesanan::class, 'pesanan_id');
+        return $this->hasMany(DetailPesanan::class, 'pesanan_id')->with(['menu']);
     }
 
     public function transaksi(): HasOne

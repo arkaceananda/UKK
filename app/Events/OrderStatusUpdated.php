@@ -19,21 +19,18 @@ class OrderStatusUpdated implements ShouldBroadcast
 
     public function broadcastOn(): Channel
     {
-        return new Channel('meja.'.$this->pesanan->meja->nomor);
+        return new Channel('order.'.$this->pesanan->id);
     }
 
     public function broadcastAs(): string
     {
-        return 'order.status.updated';
+        return 'OrderStatusUpdated';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'id' => $this->pesanan->id,
-            'meja_nomor' => $this->pesanan->meja->nomor,
             'status' => $this->pesanan->status->value,
-            'updated_at' => $this->pesanan->updated_at->toISOString(),
         ];
     }
 }

@@ -16,12 +16,12 @@ class DetailPesanan extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['pesanan_id', 'menu_id', 'jumlah', 'harga_satuan', 'subtotal'];
+    protected $fillable = ['pesanan_id', 'menu_id', 'quantity', 'harga_satuan', 'subtotal'];
 
     protected function casts(): array
     {
         return [
-            'jumlah' => 'integer',
+            'quantity' => 'integer',
             'harga_satuan' => 'decimal:2',
             'subtotal' => 'decimal:2',
         ];

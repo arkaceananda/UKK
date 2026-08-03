@@ -17,14 +17,16 @@ class OrderPlaced implements ShouldBroadcast
         public readonly Pesanan $pesanan,
     ) {}
 
-    public function broadcastOn(): Channel
+    public function broadcastOn(): array
     {
-        return new Channel('kasir');
+        return [
+            new Channel('kasir-channel'),
+        ];
     }
 
     public function broadcastAs(): string
     {
-        return 'order.placed';
+        return 'OrderPlaced';
     }
 
     public function broadcastWith(): array
@@ -36,8 +38,8 @@ class OrderPlaced implements ShouldBroadcast
             'status' => $this->pesanan->status->value,
             'items' => $this->pesanan->details->map(fn ($d) => [
                 'nama' => $d->menu->nama,
-                'jumlah' => $d->jumlah,
-                'subtotal' => $d->subtotal,
+                'quantity' => $d->quantity,
+                'harga' => $d->harga,
             ]),
             'created_at' => $this->pesanan->created_at->toISOString(),
         ];
