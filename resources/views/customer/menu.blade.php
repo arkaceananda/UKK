@@ -1,3 +1,3 @@
 @extends('layouts.customer')
 
-<livewire:customer.menu />
+<livewire:customer.menu :meja="$meja" />

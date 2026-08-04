@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Customer;
 
+use App\Enums\StatusMeja;
 use App\Enums\StatusMenu;
 use App\Models\KategoriMenu;
+use App\Models\Meja;
 use App\Models\Menu;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -22,7 +24,9 @@ class CartTest extends TestCase
             'stok' => 10,
         ]);
 
-        Livewire::test(\App\Livewire\Customer\Menu::class)
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
+
+        Livewire::test(\App\Livewire\Customer\Menu::class, ['meja' => $meja])
             ->call('addToCart', $menu->id)
             ->assertSet('cart.'.$menu->id.'.jumlah', 1);
     }
@@ -36,7 +40,9 @@ class CartTest extends TestCase
             'stok' => 10,
         ]);
 
-        Livewire::test(\App\Livewire\Customer\Menu::class)
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
+
+        Livewire::test(\App\Livewire\Customer\Menu::class, ['meja' => $meja])
             ->call('addToCart', $menu->id)
             ->call('removeFromCart', $menu->id)
             ->assertSet('cart', []);

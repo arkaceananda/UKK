@@ -17,11 +17,11 @@ class OrderService
     /**
      * Checkout: create order + details + transaction, reduce stock, broadcast.
      *
-     * @param  array<int, array{menu_id: int, quantity: int, harga: int}>  $items
+     * @param  array<int, array{menu_id: int, jumlah: int, harga_satuan: int}>  $items
      */
-    public function checkout(Meja $meja, array $items, ?string $catatan = null, ?int $kasirId = null): Pesanan
+    public function checkout(Meja $meja, array $items, MetodeBayar $metodeBayar = MetodeBayar::Tunai, ?string $catatan = null, ?int $kasirId = null): Pesanan
     {
-        return DB::transaction(function () use ($meja, $items, $catatan, $kasirId) {
+        return DB::transaction(function () use ($meja, $items, $metodeBayar, $catatan, $kasirId) {
             $pesanan = Pesanan::create([
                 'meja_id' => $meja->id,
                 'kasir_id' => $kasirId,
@@ -35,30 +35,29 @@ class OrderService
             foreach ($items as $item) {
                 $menu = Menu::lockForUpdate()->findOrFail($item['menu_id']);
 
-                if (! $menu->isAvailable() || $menu->stok < $item['quantity']) {
+                if (! $menu->isAvailable() || $menu->stok < $item['jumlah']) {
                     throw new \DomainException("Menu '{$menu->nama}' tidak tersedia atau stok tidak cukup.");
                 }
 
-                $subtotal = $menu->harga * $item['quantity'];
+                $subtotal = $menu->harga * $item['jumlah'];
 
                 DetailPesanan::create([
                     'pesanan_id' => $pesanan->id,
                     'menu_id' => $menu->id,
-                    'quantity' => $item['quantity'],
+                    'jumlah' => $item['jumlah'],
                     'harga_satuan' => $menu->harga,
                     'subtotal' => $subtotal,
                 ]);
 
-                $menu->reduceStock($item['quantity']);
+                $menu->reduceStock($item['jumlah']);
                 $totalHarga += $subtotal;
             }
 
             $pesanan->update(['total_harga' => $totalHarga]);
 
-            // Default to tunai and pending for manual orders
             Transaksi::create([
                 'pesanan_id' => $pesanan->id,
-                'metode_bayar' => MetodeBayar::Tunai,
+                'metode_bayar' => $metodeBayar,
                 'total_bayar' => $totalHarga,
                 'status_bayar' => StatusBayar::Pending,
             ]);
