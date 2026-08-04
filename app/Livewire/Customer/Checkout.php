@@ -9,11 +9,15 @@ use App\Models\Meja;
 use App\Models\Menu as MenuModel;
 use App\Services\OrderService;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.customer')]
 class Checkout extends Component
 {
+    public Meja $meja;
+
     public array $cart = [];
 
     public string $selectedCategory = '';
@@ -36,19 +40,17 @@ class Checkout extends Component
         'searchQuery' => ['except' => ''],
     ];
 
-    public function mount(): void
+    public function mount(Meja $meja): void
     {
-        $this->cart = session('burjo_cart', []);
+        $this->meja = $meja;
+        $this->selectedMejaId = (string) $meja->id;
+        $this->cart = session('burjo_cart_'.$meja->id, []);
 
         $firstCategory = KategoriMenu::whereHas('menu', fn ($q) => $q->where('status', StatusMenu::Tersedia))
             ->first();
 
         if ($this->selectedCategory === '' && $firstCategory) {
             $this->selectedCategory = (string) $firstCategory->id;
-        }
-
-        if ($this->selectedMejaId === '' && request()->has('meja')) {
-            $this->selectedMejaId = request('meja');
         }
     }
 
@@ -94,7 +96,7 @@ class Checkout extends Component
         }
 
         $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
     }
 
     public function removeItem(int $menuId): void
@@ -114,7 +116,7 @@ class Checkout extends Component
         unset($this->cart[$cartKey]);
 
         $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
     }
 
     public function removeFromCart(int $menuId): void
@@ -153,7 +155,7 @@ class Checkout extends Component
         $this->cart[$cartKey]['jumlah'] = $quantity;
 
         $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
     }
 
     public function selectCategory(string $categoryId): void
@@ -195,7 +197,7 @@ class Checkout extends Component
         $this->notes = '';
         $this->metodeBayar = '';
         $this->editingQuantityId = null;
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
 
         $this->dispatch('notify', message: 'Pesanan berhasil dibuat!', type: 'success');
         $this->dispatch('order-placed', orderId: $pesanan->id);
@@ -205,7 +207,7 @@ class Checkout extends Component
     {
         $this->cart = [];
         $this->editingQuantityId = null;
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
 
         $this->dispatch('cart-updated', count: 0, total: 0);
     }

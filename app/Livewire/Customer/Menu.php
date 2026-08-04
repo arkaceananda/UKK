@@ -3,7 +3,6 @@
 namespace App\Livewire\Customer;
 
 use App\Enums\MetodeBayar;
-use App\Enums\StatusMeja;
 use App\Enums\StatusMenu;
 use App\Models\KategoriMenu;
 use App\Models\Meja;
@@ -17,13 +16,15 @@ use Livewire\Component;
 
 class Menu extends Component
 {
+    public Meja $meja;
+
     public array $cart = [];
 
     public string $selectedCategory = '';
 
-    public string $selectedMejaId = '';
-
     public string $searchQuery = '';
+
+    public string $selectedMejaId = '';
 
     public string $notes = '';
 
@@ -35,24 +36,20 @@ class Menu extends Component
 
     protected $queryString = [
         'selectedCategory' => ['except' => ''],
-        'selectedMejaId' => ['except' => ''],
         'searchQuery' => ['except' => ''],
     ];
 
-    public function mount(): void
+    public function mount(Meja $meja): void
     {
-        $this->cart = session('burjo_cart', []);
-        $this->selectedMejaId = '5';
+        $this->meja = $meja;
+        $this->cart = session('burjo_cart_'.$this->meja->id, []);
+        $this->selectedMejaId = (string) $this->meja->id;
 
         $firstCategory = KategoriMenu::whereHas('menu', fn ($q) => $q->where('status', StatusMenu::Tersedia))
             ->first();
 
         if ($this->selectedCategory === '' && $firstCategory) {
             $this->selectedCategory = (string) $firstCategory->id;
-        }
-
-        if ($this->selectedMejaId === '' && request()->has('meja')) {
-            $this->selectedMejaId = request('meja');
         }
     }
 
@@ -94,7 +91,7 @@ class Menu extends Component
         }
 
         $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
     }
 
     public function decrementQuantity(int $menuId): void
@@ -114,7 +111,7 @@ class Menu extends Component
                 unset($this->cart[$cartKey]);
             }
             $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-            session(['burjo_cart' => $this->cart]);
+            session(['burjo_cart_'.$this->meja->id => $this->cart]);
         }
     }
 
@@ -127,7 +124,7 @@ class Menu extends Component
         }
 
         $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
     }
 
     public function startEditingQuantity(int $menuId): void
@@ -163,7 +160,7 @@ class Menu extends Component
         $this->editingQuantityId = null;
 
         $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
     }
 
     public function cancelEditingQuantity(): void
@@ -198,7 +195,7 @@ class Menu extends Component
         $this->cart = [];
         $this->notes = '';
         $this->editingQuantityId = null;
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
 
         $this->dispatch('notify', message: 'Pesanan berhasil dibuat!', type: 'success');
         $this->dispatch('order-placed', orderId: $pesanan->id);
@@ -208,7 +205,7 @@ class Menu extends Component
     {
         $this->cart = [];
         $this->editingQuantityId = null;
-        session(['burjo_cart' => $this->cart]);
+        session(['burjo_cart_'.$this->meja->id => $this->cart]);
 
         $this->dispatch('cart-updated', count: 0, total: 0);
     }
@@ -269,9 +266,9 @@ class Menu extends Component
         return view('livewire.customer.menu', [
             'categories' => $this->categories,
             'menus' => $this->menus,
-            'meja' => Meja::where('status', StatusMeja::Aktif)->get(),
             'cartCount' => $this->cartCount,
             'cartTotal' => $this->cartTotal,
+            'meja' => $this->meja,
         ]);
     }
 }

@@ -28,7 +28,7 @@
                     <span class="px-2 py-1 rounded-full bg-accent text-ink text-xs font-bold font-mono">{{ $cartCount }}</span>
                 @endif
                 <span class="shrink-0 px-4 py-2 rounded-full bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark text-sm text-arang dark:text-kertas font-medium">
-                    Meja 5
+                    Meja {{ $meja->nomor }}
                 </span>
             </div>
         </div>
@@ -178,7 +178,7 @@
     @if(count($cart) > 0)
         <div class="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 bg-gradient-to-t from-paper via-paper to-transparent dark:from-ink dark:via-ink pt-6">
             <a
-                href="{{ route('customer.checkout') }}"
+                href="{{ route('customer.checkout', $meja) }}"
                 wire:navigate
                 class="mx-auto max-w-lg w-full flex items-center justify-between bg-accent hover:bg-accent-dark text-ink rounded-2xl shadow-elevated px-5 py-3.5 transition-all"
             >
