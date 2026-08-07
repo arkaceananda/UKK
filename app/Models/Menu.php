@@ -42,13 +42,13 @@ class Menu extends Model
         return $this->status === StatusMenu::Tersedia && $this->stok > 0;
     }
 
-    public function reduceStock(int $quantity): void
+    public function reduceStock(int $jumlah): void
     {
-        if ($this->stok < $quantity) {
+        if ($this->stok < $jumlah) {
             throw new \DomainException("Stok '{$this->nama}' tidak mencukupi.");
         }
 
-        $this->decrement('stok', $quantity);
+        $this->decrement('stok', $jumlah);
 
         if ($this->stok === 0) {
             $this->update(['status' => StatusMenu::Habis]);

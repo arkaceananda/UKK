@@ -13,6 +13,11 @@
         -moz-osx-font-smoothing: grayscale;
     }
 
+    /* Prevent FOUC (Flash of Unstyled Content) on navigation */
+    [wire\:navigate] {
+        @apply opacity-100;
+    }
+
     .scrollbar-hide::-webkit-scrollbar {
         display: none;
     }
@@ -20,6 +25,20 @@
     .scrollbar-hide {
         -ms-overflow-style: none;
         scrollbar-width: none;
+    }
+
+    /* Smooth transition for Livewire navigation */
+    .livewire-navigate-fade {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
     }
 }
 

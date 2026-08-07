@@ -20,8 +20,8 @@
                         <div class="space-y-1.5 mb-3">
                             @foreach($order->details as $detail)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->quantity }}x {{ $detail->menu->nama }}</span>
-                                    <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->quantity, 0, ',', '.') }}</span>
+                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}</span>
+                                    <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             @endforeach
                         </div>
@@ -76,8 +76,8 @@
                         <div class="space-y-1.5 mb-3">
                             @foreach($order->details as $detail)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->quantity }}x {{ $detail->menu->nama }}</span>
-                                    <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->quantity, 0, ',', '.') }}</span>
+                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}</span>
+                                    <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             @endforeach
                         </div>
@@ -117,8 +117,8 @@
                         <div class="space-y-1.5 mb-3">
                             @foreach($order->details as $detail)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->quantity }}x {{ $detail->menu->nama }}</span>
-                                    <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->quantity, 0, ',', '.') }}</span>
+                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}</span>
+                                    <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             @endforeach
                         </div>
@@ -172,8 +172,8 @@
                         <div class="space-y-1.5">
                             @foreach($order->details as $detail)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->quantity }}x {{ $detail->menu->nama }}</span>
-                                    <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->quantity, 0, ',', '.') }}</span>
+                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}</span>
+                                    <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             @endforeach
                         </div>

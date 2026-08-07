@@ -9,14 +9,17 @@ use App\Models\Meja;
 use App\Models\Menu as MenuModel;
 use App\Services\OrderService;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.customer')]
 class Checkout extends Component
 {
-    public Meja $meja;
+    #[Locked]
+    public int $mejaId;
 
     public array $cart = [];
 
@@ -42,9 +45,9 @@ class Checkout extends Component
 
     public function mount(Meja $meja): void
     {
-        $this->meja = $meja;
+        $this->mejaId = $meja->id;
         $this->selectedMejaId = (string) $meja->id;
-        $this->cart = session('burjo_cart_'.$meja->id, []);
+        $this->cart = session('burjo_cart_'.$this->mejaId, []);
 
         $firstCategory = KategoriMenu::whereHas('menu', fn ($q) => $q->where('status', StatusMenu::Tersedia))
             ->first();
@@ -92,11 +95,14 @@ class Checkout extends Component
                 'harga' => (float) $menu->harga,
                 'jumlah' => 1,
                 'foto' => $menu->foto,
+                'is_available' => $menu->isAvailable(),
             ];
         }
 
-        $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart_'.$this->meja->id => $this->cart]);
+        $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
+        $total = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
+        $this->dispatch('cart-updated', count: $count, total: $total);
+        session(['burjo_cart_'.$this->mejaId => $this->cart]);
     }
 
     public function removeItem(int $menuId): void
@@ -115,8 +121,10 @@ class Checkout extends Component
 
         unset($this->cart[$cartKey]);
 
-        $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart_'.$this->meja->id => $this->cart]);
+        $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
+        $total = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
+        $this->dispatch('cart-updated', count: $count, total: $total);
+        session(['burjo_cart_'.$this->mejaId => $this->cart]);
     }
 
     public function removeFromCart(int $menuId): void
@@ -124,7 +132,7 @@ class Checkout extends Component
         $this->removeItem($menuId);
     }
 
-    public function updateQuantity(int $menuId, int $quantity): void
+    public function updateQuantity(int $menuId, int $jumlah): void
     {
         $cartKey = null;
         foreach ($this->cart as $key => $item) {
@@ -138,7 +146,7 @@ class Checkout extends Component
             return;
         }
 
-        if ($quantity <= 0) {
+        if ($jumlah <= 0) {
             $this->removeItem($menuId);
 
             return;
@@ -146,16 +154,18 @@ class Checkout extends Component
 
         $menu = MenuModel::findOrFail($menuId);
 
-        if ($quantity > $menu->stok) {
+        if ($jumlah > $menu->stok) {
             $this->dispatch('notify', message: 'Stok tidak cukup', type: 'error');
 
             return;
         }
 
-        $this->cart[$cartKey]['jumlah'] = $quantity;
+        $this->cart[$cartKey]['jumlah'] = $jumlah;
 
-        $this->dispatch('cart-updated', count: $this->cartCount, total: $this->cartTotal);
-        session(['burjo_cart_'.$this->meja->id => $this->cart]);
+        $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
+        $total = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
+        $this->dispatch('cart-updated', count: $count, total: $total);
+        session(['burjo_cart_'.$this->mejaId => $this->cart]);
     }
 
     public function selectCategory(string $categoryId): void
@@ -197,7 +207,7 @@ class Checkout extends Component
         $this->notes = '';
         $this->metodeBayar = '';
         $this->editingQuantityId = null;
-        session(['burjo_cart_'.$this->meja->id => $this->cart]);
+        session(['burjo_cart_'.$this->mejaId => $this->cart]);
 
         $this->dispatch('notify', message: 'Pesanan berhasil dibuat!', type: 'success');
         $this->dispatch('order-placed', orderId: $pesanan->id);
@@ -207,7 +217,7 @@ class Checkout extends Component
     {
         $this->cart = [];
         $this->editingQuantityId = null;
-        session(['burjo_cart_'.$this->meja->id => $this->cart]);
+        session(['burjo_cart_'.$this->mejaId => $this->cart]);
 
         $this->dispatch('cart-updated', count: 0, total: 0);
     }
@@ -217,7 +227,8 @@ class Checkout extends Component
         return config('app.name', 'BurjoOrder');
     }
 
-    public function getNomorMejaProperty(): ?string
+    #[Computed]
+    public function nomorMeja(): ?string
     {
         if ($this->selectedMejaId === '') {
             return null;
@@ -228,7 +239,8 @@ class Checkout extends Component
         return $meja?->nomor;
     }
 
-    public function getSelectedMejaProperty(): ?Meja
+    #[Computed]
+    public function selectedMeja(): ?Meja
     {
         if ($this->selectedMejaId === '') {
             return null;
@@ -237,22 +249,26 @@ class Checkout extends Component
         return Meja::find($this->selectedMejaId);
     }
 
-    public function getSubtotalProperty(): float
-    {
-        return $this->cartTotal;
-    }
-
-    public function getCartTotalProperty(): float
+    #[Computed]
+    public function subtotal(): float
     {
         return collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
     }
 
-    public function getCartCountProperty(): int
+    #[Computed]
+    public function cartTotal(): float
+    {
+        return collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
+    }
+
+    #[Computed]
+    public function cartCount(): int
     {
         return collect($this->cart)->sum(fn ($item) => $item['jumlah']);
     }
 
-    public function getCategoriesProperty(): \Illuminate\Database\Eloquent\Collection
+    #[Computed]
+    public function categories(): \Illuminate\Database\Eloquent\Collection
     {
         return KategoriMenu::whereHas('menu', fn ($q) => $q->where('status', StatusMenu::Tersedia))
             ->withCount(['menu' => fn ($q) => $q->where('status', StatusMenu::Tersedia)])
@@ -260,7 +276,8 @@ class Checkout extends Component
             ->get();
     }
 
-    public function getMenusProperty(): Collection
+    #[Computed]
+    public function menus(): Collection
     {
         $query = MenuModel::query()
             ->where('status', StatusMenu::Tersedia)
@@ -287,7 +304,6 @@ class Checkout extends Component
                 'harga' => (float) $menu->harga,
                 'foto' => $menu->foto,
                 'kategori' => $menu->kategori?->nama,
-                'is_available' => $menu->isAvailable(),
             ];
         });
     }
@@ -295,15 +311,17 @@ class Checkout extends Component
     #[Title('Checkout')]
     public function render()
     {
+        $subtotal = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
+        $cartCount = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
+
         return view('livewire.customer.checkout', [
             'categories' => $this->categories,
             'menus' => $this->menus,
             'burjoName' => $this->burjoName,
             'nomorMeja' => $this->nomorMeja,
-            'meja' => $this->selectedMeja,
-            'cartCount' => $this->cartCount,
-            'cartTotal' => $this->cartTotal,
-            'subtotal' => $this->subtotal,
+            'cartCount' => $cartCount,
+            'cartTotal' => collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']),
+            'subtotal' => $subtotal,
         ]);
     }
 }

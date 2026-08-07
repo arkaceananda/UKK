@@ -71,7 +71,7 @@
                                     <ul class="mt-2 space-y-1 text-xs">
                                         @foreach($order->details as $detail)
                                             <li class="text-muted-dark dark:text-muted-light">
-                                                {{ $detail->quantity }}x {{ $detail->menu->nama }}
+                                                {{ $detail->jumlah }}x {{ $detail->menu->nama }}
                                             </li>
                                         @endforeach
                                     </ul>

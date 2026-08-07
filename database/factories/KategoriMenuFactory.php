@@ -11,10 +11,23 @@ class KategoriMenuFactory extends Factory
 
     public function definition(): array
     {
-        $categories = ['Makanan', 'Minuman', 'Snack', 'Dessert', 'Paket'];
+        $categories = [
+            'Nasi Goreng',
+            'Nasi Katsu',
+            'Chicken Rice Bowl',
+            'Menu Nasi',
+            'Base Mie',
+            'Beef Slice',
+            'Tea & Fresh Drink',
+            'Juice',
+            'Coffee',
+            'Minuman Favorit',
+            'Snack',
+            'Add On',
+        ];
 
         return [
-            'nama' => fake()->unique()->randomElement($categories),
+            'nama' => fake()->randomElement($categories),
         ];
     }
 }

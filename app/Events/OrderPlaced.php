@@ -38,7 +38,7 @@ class OrderPlaced implements ShouldBroadcast
             'status' => $this->pesanan->status->value,
             'items' => $this->pesanan->details->map(fn ($d) => [
                 'nama' => $d->menu->nama,
-                'quantity' => $d->quantity,
+                'jumlah' => $d->jumlah,
                 'harga' => $d->harga,
             ]),
             'created_at' => $this->pesanan->created_at->toISOString(),
