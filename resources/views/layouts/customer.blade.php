@@ -8,43 +8,66 @@
     <title>{{ config('app.name', 'BurjoOrder') }} - Menu</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
     <link href="https://fonts.bunny.net/css?family=jetbrains-mono:400;500&family=plus-jakarta-sans:400;500;600;700&family=space-grotesk:600;700&display=swap" rel="stylesheet" />
+
+    {{-- Critical inline styles to prevent FOUC while CSS loads --}}
+    <style>
+        html {
+            color-scheme: light dark;
+        }
+        html.dark {
+            background-color: #14171B;
+            color: #EDE7DA;
+        }
+        html:not(.dark) {
+            background-color: #F6F1E7;
+            color: #14171B;
+        }
+        body {
+            background-color: inherit;
+            color: inherit;
+        }
+    </style>
+
+    @vite(['resources/css/customer.css', 'resources/js/customer.js'])
 
     <script>
         (function() {
-            var stored = localStorage.getItem('theme');
-            var system = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            var theme = stored || (system ? 'dark' : 'light');
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
+            // Clear any old theme preference from localStorage
+            localStorage.removeItem('theme');
+            
+            // Apply theme based on system preference only
+            function applyTheme() {
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (prefersDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+
+            // Apply immediately before rendering to prevent flash
+            applyTheme();
+
+            // Listen for system preference changes
+            var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            if (mediaQuery.addEventListener) {
+                mediaQuery.addEventListener('change', applyTheme);
+            } else if (mediaQuery.addListener) {
+                mediaQuery.addListener(applyTheme);
             }
         })();
     </script>
-
-    @vite(['resources/css/customer.css', 'resources/js/customer.js'])
 </head>
 <body class="font-body text-arang bg-paper dark:text-kertas dark:bg-ink transition-colors duration-200 min-h-screen flex flex-col">
     <div class="flex-1 flex flex-col mx-auto w-full max-w-lg lg:max-w-4xl">
-        <header class="sticky top-0 z-40 bg-paper/80 dark:bg-surface/80 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 py-3">
+        <header class="bg-paper dark:bg-ink border-b border-border-light dark:border-border-dark px-4 py-3">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="font-display text-lg font-bold text-ink dark:text-kertas">BurjoOrder</h1>
+                    <h1 class="font-display text-lg font-bold text-arang dark:text-kertas">BurjoOrder</h1>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div x-data="{ open: false }" class="relative">
-                        <button @click="open = !open" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors" aria-label="Tema">
-                            <svg class="theme-icon-dark hidden w-5 h-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 0 018 0z"/></svg>
-                            <svg class="theme-icon-light w-5 h-5 text-slate-700" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m-7.07-11.07l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2m-13.66 3.66l-1.41 1.41M19.07 6.34l-1.41 1.41"/></svg>
-                        </button>
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-paper-card dark:bg-surface rounded-lg shadow-lg border border-border-light dark:border-border-dark py-1 z-50">
-                            <button @click="setTheme('light'); open = false" class="w-full text-left px-4 py-2 text-sm text-arang dark:text-kertas hover:bg-gray-100 dark:hover:bg-surface transition-colors">Terang</button>
-                            <button @click="setTheme('dark'); open = false" class="w-full text-left px-4 py-2 text-sm text-arang dark:text-kertas hover:bg-gray-100 dark:hover:bg-surface transition-colors">Gelap</button>
-                            <button @click="setTheme('system'); open = false" class="w-full text-left px-4 py-2 text-sm text-arang dark:text-kertas hover:bg-gray-100 dark:hover:bg-surface transition-colors">Sistem</button>
-                        </div>
-                    </div>
-                </div>
+                <div class="flex items-center gap-2"></div>
             </div>
         </header>
 
@@ -54,14 +77,9 @@
     </div>
 
     <script>
-        function setTheme(theme) {
-            if (theme === 'system') {
-                localStorage.removeItem('theme');
-            } else {
-                localStorage.setItem('theme', theme);
-            }
-            document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches));
-            initThemeSystem();
+        function applyTheme() {
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.toggle('dark', prefersDark);
         }
 
         document.addEventListener('livewire:navigated', function() {
@@ -94,18 +112,8 @@
             });
         }
 
-        function initThemeSystem() {
-            var isDark = document.documentElement.classList.contains('dark');
-            document.querySelectorAll('.theme-icon-dark').forEach(function(el) {
-                el.classList.toggle('hidden', !isDark);
-            });
-            document.querySelectorAll('.theme-icon-light').forEach(function(el) {
-                el.classList.toggle('hidden', isDark);
-            });
-        }
-
         initLazyImages();
-        initThemeSystem();
+        applyTheme();
 
         window.addEventListener('notify', function(e) {
             var detail = e.detail;

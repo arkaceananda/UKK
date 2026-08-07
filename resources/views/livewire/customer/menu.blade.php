@@ -1,4 +1,21 @@
-<div class="pb-32" x-data="{ activeCategory: null }" x-init="
+<div class="pb-32" x-data="{
+    activeCategory: null,
+    scrollToActiveCategory() {
+        if (!this.activeCategory) {
+            return;
+        }
+
+        this.$nextTick(() => {
+            const container = this.$refs.pillContainer;
+            const activeEl = this.$refs['pill-' + this.activeCategory];
+
+            if (container && activeEl) {
+                const targetLeft = Math.max(0, activeEl.offsetLeft - 16);
+                container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            }
+        });
+    }
+}" x-init="
     activeCategory = {{ $categories->first()->id ?? 'null' }};
     const categories = {{ json_encode($categories->pluck('id')->toArray()) }};
     categories.forEach(function(categoryId) {
@@ -14,45 +31,57 @@
             obs.observe(el);
         }
     });
-">
+" x-effect="scrollToActiveCategory()">
 
-    {{-- HEADER --}}
-    <div class="px-4 pt-4 pb-3">
-        <div class="flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="w-11 h-11 rounded-full bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark shrink-0"></div>
-                <h1 class="font-display font-semibold text-arang dark:text-kertas text-lg truncate">BurjoOrder</h1>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                @if(count($cart) > 0)
-                    <span class="px-2 py-1 rounded-full bg-accent text-ink text-xs font-bold font-mono">{{ $cartCount }}</span>
-                @endif
-                <span class="shrink-0 px-4 py-2 rounded-full bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark text-sm text-arang dark:text-kertas font-medium">
-                    Meja {{ $meja->nomor }}
-                </span>
+{{-- Theme detection --}}
+<script>
+    document.addEventListener('livewire:navigated', function() {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', prefersDark);
+    });
+</script>
+
+    {{-- STICKY HEADER + CATEGORY PILLS --}}
+    <div class="sticky top-0 z-30 bg-paper dark:bg-ink">
+        {{-- HEADER --}}
+        <div class="px-4 pt-4 pb-3 border-b border-border-light dark:border-border-dark">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-11 h-11 rounded-full bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark shrink-0"></div>
+                    <h1 class="font-display font-semibold text-arang dark:text-kertas text-lg truncate">BurjoOrder</h1>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    @if(count($cart) > 0)
+                        <span class="px-2 py-1 rounded-full bg-accent text-ink text-xs font-bold font-mono">{{ $cartCount }}</span>
+                    @endif
+                    <span class="shrink-0 px-4 py-2 rounded-full bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark text-sm text-arang dark:text-kertas font-medium">
+                        Meja {{ $meja->nomor }}
+                    </span>
+                </div>
             </div>
         </div>
+
+        {{-- CATEGORY PILLS --}}
+        @if($categories->isNotEmpty())
+            <div class="bg-paper/95 dark:bg-ink/95 backdrop-blur-md border-b border-border-light/50 dark:border-border-dark/50 px-4 py-3">
+                <div x-ref="pillContainer" class="flex gap-2 overflow-x-auto scrollbar-hide">
+                    @foreach($categories as $category)
+                        <a
+                            href="#kategori-{{ $category->id }}"
+                            x-ref="pill-{{ $category->id }}"
+                            @click="activeCategory = {{ $category->id }}"
+                            :class="activeCategory === {{ $category->id }}
+                                ? 'bg-accent text-ink font-semibold border-accent shadow-sm'
+                                : 'bg-paper-card text-arang border-border-light dark:bg-surface dark:text-kertas dark:border-border-dark'"
+                            class="shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border"
+                        >
+                            {{ $category->nama }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
-
-    {{-- CATEGORY PILLS --}}
-    @if($categories->isNotEmpty())
-        <div class="sticky top-0 z-30 bg-paper/95 dark:bg-ink/95 backdrop-blur-md border-b border-border-light/50 dark:border-border-dark/50 px-4 py-3">
-            <div class="flex gap-2 overflow-x-auto scrollbar-hide">
-                @foreach($categories as $category)
-                    <a
-                        href="#kategori-{{ $category->id }}"
-                        @click="activeCategory = {{ $category->id }}"
-                        :class="activeCategory === {{ $category->id }}
-                            ? 'bg-accent text-ink font-semibold border-accent'
-                            : 'bg-paper-card dark:bg-surface text-arang dark:text-kertas border-border-dark'"
-                        class="shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border"
-                    >
-                        {{ $category->nama }}
-                    </a>
-                @endforeach
-            </div>
-        </div>
-    @endif
 
     {{-- MENU LIST --}}
     <div class="px-4 pt-4">
@@ -98,25 +127,25 @@
 
                                     <div class="flex-1 min-w-0 flex flex-col justify-between">
                                         <div>
-                                            <h3 class="font-display font-semibold text-sm sm:text-base line-clamp-1 {{ $item['is_available'] ? 'text-arang dark:text-kertas' : 'text-muted-dark dark:text-muted-light' }}">
+                                            <h3 class="font-display font-semibold text-sm sm:text-base line-clamp-1 {{ ($item['is_available'] ?? false) ? 'text-arang dark:text-kertas' : 'text-muted-dark dark:text-muted-light' }}">
                                                 {{ $item['nama'] }}
                                             </h3>
-                                            <p class="text-xs line-clamp-2 mt-0.5 {{ $item['is_available'] ? 'text-muted-dark dark:text-muted-light' : 'text-muted-dark/70 dark:text-muted-light/70' }}">
+                                            <p class="text-xs line-clamp-2 mt-0.5 {{ ($item['is_available'] ?? false) ? 'text-muted-dark dark:text-muted-light' : 'text-muted-dark/70 dark:text-muted-light/70' }}">
                                                 {{ $item['deskripsi'] }}
                                             </p>
                                         </div>
 
                                         <div class="flex items-end justify-between mt-2">
                                             <div>
-                                                <span class="font-mono font-bold text-sm {{ $item['is_available'] ? 'text-accent' : 'text-accent/50' }}">
+                                                <span class="font-mono font-bold text-sm {{ ($item['is_available'] ?? false) ? 'text-accent' : 'text-accent/50' }}">
                                                     Rp {{ number_format($item['harga'], 0, ',', '.') }}
                                                 </span>
-                                                @unless($item['is_available'])
+                                                @unless($item['is_available'] ?? false)
                                                     <p class="text-xs text-muted-dark dark:text-muted-light leading-tight">Habis</p>
                                                 @endunless
                                             </div>
 
-                                             @if($item['is_available'])
+                                             @if($item['is_available'] ?? false)
                                                  @php
                                                      $cartItem = collect($cart)->firstWhere('menu_id', $item['id']);
                                                  @endphp

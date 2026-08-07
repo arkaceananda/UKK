@@ -88,7 +88,7 @@ class ManualOrder extends Component
                 $orderDetails[] = [
                     'menu_id' => $item['menu_id'],
                     'jumlah' => $item['jumlah'],
-                    'harga' => $item['harga'],
+                    'harga_satuan' => $item['harga'],
                 ];
             }
         }
@@ -100,8 +100,9 @@ class ManualOrder extends Component
         }
 
         try {
+            $meja = Meja::findOrFail($this->selectedMeja);
             $orderService = app(OrderService::class);
-            $order = $orderService->checkout($this->selectedMeja, $orderDetails, MetodeBayar::Tunai, $this->catatan, auth()->id());
+            $order = $orderService->checkout($meja, $orderDetails, MetodeBayar::Tunai, $this->catatan, auth()->id());
 
             event(new OrderPlaced($order->fresh()));
 
