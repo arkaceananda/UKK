@@ -1,4 +1,4 @@
-<div class="pb-32" x-data="{
+<div class="pb-32" wire:on.window="refreshStock" wire:poll.15s="refreshStock" x-data="{
     activeCategory: null,
     scrollToActiveCategory() {
         if (!this.activeCategory) {

@@ -1,4 +1,4 @@
-<div class="pb-32">
+<div class="pb-32" wire:on.window="refreshStock" wire:poll.15s="refreshStock">
 
     {{-- HEADER --}}
     <div class="px-4 pt-4 pb-3">

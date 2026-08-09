@@ -38,6 +38,9 @@
                     <a href="{{ route('kasir.manual-order') }}" class="block px-4 py-3 rounded-lg {{ request()->routeIs('kasir.manual-order') ? 'bg-accent text-white' : 'text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang' }} transition-colors">
                         Manual Order
                     </a>
+                    <a href="{{ route('kasir.meja-qr') }}" class="block px-4 py-3 rounded-lg {{ request()->routeIs('kasir.meja-qr') ? 'bg-accent text-white' : 'text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang' }} transition-colors">
+                        QR Code Meja
+                    </a>
                 </nav>
 
                 <div class="p-4 border-t border-border-light dark:border-border-dark">
