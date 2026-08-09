@@ -16,12 +16,13 @@ class Meja extends Model
 
     protected $table = 'meja';
 
-    protected $fillable = ['nomor', 'token', 'status'];
+    protected $fillable = ['nomor', 'token', 'status', 'is_occupied'];
 
     protected function casts(): array
     {
         return [
             'status' => StatusMeja::class,
+            'is_occupied' => 'boolean',
         ];
     }
 

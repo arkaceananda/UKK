@@ -13,3 +13,7 @@ Broadcast::channel('kasir-channel', function () {
 Broadcast::channel('order.{orderId}', function ($user, $orderId) {
     return true;
 });
+
+Broadcast::channel('stock-updates', function () {
+    return true;
+});
