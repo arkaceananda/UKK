@@ -18,7 +18,7 @@ class Transaksi extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['pesanan_id', 'metode_bayar', 'total_bayar', 'status_bayar'];
+    protected $fillable = ['pesanan_id', 'metode_bayar', 'total_bayar', 'status_bayar', 'midtrans_transaction_id', 'midtrans_order_id', 'qr_code_url', 'qr_string'];
 
     protected function casts(): array
     {

@@ -5,6 +5,7 @@ namespace App\Livewire\Kasir;
 use App\Enums\StatusBayar;
 use App\Enums\StatusPesanan;
 use App\Events\OrderStatusUpdated;
+use App\Events\StockUpdated;
 use App\Models\Pesanan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -70,7 +71,7 @@ class KanbanBoard extends Component
 
     public function rejectOrder($orderId)
     {
-        $order = Pesanan::with(['details.menu', 'transaksi'])->findOrFail($orderId);
+        $order = Pesanan::with(['details.menu', 'transaksi', 'meja'])->findOrFail($orderId);
         $order->kasir_id = (int) Auth::id();
         $order->save();
 
@@ -79,12 +80,16 @@ class KanbanBoard extends Component
                 $order->transitionTo(StatusPesanan::Ditolak);
 
                 foreach ($order->details as $detail) {
-                    $detail->menu->increment('stok', $detail->jumlah);
+                    $menu = $detail->menu->fresh();
+                    $menu->increment('stok', $detail->jumlah);
+                    event(new StockUpdated($menu->id, $menu->fresh()->stok, $menu->fresh()->status->value));
                 }
 
                 if ($order->transaksi) {
                     $order->transaksi->update(['status_bayar' => StatusBayar::Pending]);
                 }
+
+                $order->meja->update(['is_occupied' => false]);
             });
 
             event(new OrderStatusUpdated($order->fresh()));
@@ -112,7 +117,10 @@ class KanbanBoard extends Component
         $order = Pesanan::findOrFail($orderId);
 
         try {
-            $order->transitionTo(StatusPesanan::Selesai);
+            DB::transaction(function () use ($order) {
+                $order->transitionTo(StatusPesanan::Selesai);
+                $order->meja->update(['is_occupied' => false]);
+            });
             event(new OrderStatusUpdated($order->fresh()));
             $this->loadOrders();
         } catch (\DomainException $e) {

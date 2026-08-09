@@ -3,7 +3,11 @@
 use App\Enums\StatusMeja;
 use App\Enums\UserRole;
 use App\Http\Controllers\Kasir\DashboardController;
+use App\Http\Controllers\MejaScanController;
+use App\Http\Controllers\MidtransWebhookController;
 use App\Livewire\Customer\Checkout;
+use App\Livewire\Customer\QrisPayment;
+use App\Livewire\OrderStatus;
 use App\Models\Meja;
 use Illuminate\Support\Facades\Route;
 
@@ -22,7 +26,13 @@ Route::view('profile', 'profile')
     ->name('profile');
 
 Route::get('/menu', function () {
-    $meja = Meja::where('status', StatusMeja::Aktif)->first();
+    $meja = Meja::where('status', StatusMeja::Aktif)->where('is_occupied', false)->where('nomor', '5')->first();
+    if (! $meja) {
+        $meja = Meja::where('status', StatusMeja::Aktif)->where('is_occupied', false)->first();
+    }
+    if (! $meja) {
+        $meja = Meja::where('status', StatusMeja::Aktif)->first();
+    }
     if (! $meja) {
         $meja = Meja::factory()->create(['nomor' => '5', 'status' => StatusMeja::Aktif]);
     }
@@ -34,12 +44,34 @@ Route::get('/menu/{meja}', function (Meja $meja) {
     return view('customer.menu', compact('meja'));
 })->name('customer.menu');
 
+Route::get('/scan/{token}', [MejaScanController::class, 'show'])
+    ->name('meja.scan');
+
 Route::get('/menu/{meja}/checkout', Checkout::class)->name('customer.checkout');
+
+Route::get('/order/{pesanan}/status', OrderStatus::class)
+    ->name('order.status');
+
+Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
+    ->name('midtrans.webhook');
+
+Route::get('/payment/qris/{transaksi}', QrisPayment::class)
+    ->name('customer.payment-qris');
+
+Route::view('/payment/success', 'customer.payment-success')
+    ->name('customer.payment-success');
 
 Route::middleware(['auth', 'kasir'])->prefix('kasir')->name('kasir.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::view('/history', 'kasir.history')->name('history');
     Route::view('/manual-order', 'kasir.manual-order')->name('manual-order');
+    Route::match(['GET', 'POST'], '/meja-qr', function () {
+        if (request()->isMethod('POST') && request('release_meja')) {
+            Meja::where('id', request('meja_id'))->update(['is_occupied' => false]);
+        }
+
+        return view('kasir.meja-qr', ['mejas' => Meja::where('status', StatusMeja::Aktif)->get()]);
+    })->name('meja-qr');
 });
 
 require __DIR__.'/auth.php';

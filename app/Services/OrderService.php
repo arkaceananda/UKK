@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\MetodeBayar;
 use App\Enums\StatusBayar;
 use App\Enums\StatusPesanan;
+use App\Events\StockUpdated;
 use App\Models\DetailPesanan;
 use App\Models\Meja;
 use App\Models\Menu;
@@ -21,7 +22,7 @@ class OrderService
      */
     public function checkout(Meja $meja, array $items, MetodeBayar $metodeBayar = MetodeBayar::Tunai, ?string $catatan = null, ?int $kasirId = null): Pesanan
     {
-        return DB::transaction(function () use ($meja, $items, $metodeBayar, $catatan, $kasirId) {
+        $pesanan = DB::transaction(function () use ($meja, $items, $metodeBayar, $catatan, $kasirId) {
             $pesanan = Pesanan::create([
                 'meja_id' => $meja->id,
                 'kasir_id' => $kasirId,
@@ -50,6 +51,7 @@ class OrderService
                 ]);
 
                 $menu->reduceStock($item['jumlah']);
+                event(new StockUpdated($menu->id, $menu->fresh()->stok, $menu->fresh()->status->value));
                 $totalHarga += $subtotal;
             }
 
@@ -62,12 +64,58 @@ class OrderService
                 'status_bayar' => StatusBayar::Pending,
             ]);
 
-            $pesanan->load(['meja', 'details.menu', 'transaksi']);
-
-            // OrderPlaced event will be fired from the ManualOrder component for kasir,
-            // or from the customer checkout for customer orders.
+            $pesanan->load(['meja', 'details', 'transaksi']);
 
             return $pesanan;
         });
+
+        if ($metodeBayar === MetodeBayar::Qris) {
+            try {
+                $this->createMidtransCharge($pesanan, $items);
+            } catch (\Exception $e) {
+                logger()->warning('Midtrans QRIS charge failed: '.$e->getMessage());
+            }
+        }
+
+        $pesanan->load(['meja', 'details.menu', 'transaksi']);
+
+        return $pesanan;
+    }
+
+    protected function createMidtransCharge(Pesanan $pesanan, array $items): void
+    {
+        $midtransService = app(MidtransService::class);
+
+        $itemDetails = [];
+        foreach ($items as $item) {
+            $menu = Menu::findOrFail($item['menu_id']);
+            $itemDetails[] = [
+                'id' => (string) $menu->id,
+                'price' => (int) $menu->harga,
+                'quantity' => $item['jumlah'],
+                'name' => $menu->nama,
+            ];
+        }
+
+        $midtransOrderId = 'pesanan-'.$pesanan->id;
+        $grossAmount = (int) $pesanan->total_harga;
+
+        $response = $midtransService->createQrisCharge(
+            $midtransOrderId,
+            $grossAmount,
+            $itemDetails,
+            [
+                'first_name' => 'Meja '.$pesanan->meja->nomor,
+                'phone' => '',
+            ]
+        );
+
+        $transaksi = $pesanan->transaksi;
+        $transaksi->update([
+            'midtrans_transaction_id' => $midtransService->getTransactionId($response),
+            'midtrans_order_id' => $midtransOrderId,
+            'qr_code_url' => $midtransService->getQrCodeUrl($response),
+            'qr_string' => $midtransService->getQrString($response),
+        ]);
     }
 }
