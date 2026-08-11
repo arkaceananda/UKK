@@ -190,8 +190,6 @@ class Checkout extends Component
         }
 
         $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
-
-        $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
         $total = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
         $this->dispatch('cart-updated', count: $count, total: $total);
         session(['burjo_cart_'.$this->mejaId => $this->cart]);

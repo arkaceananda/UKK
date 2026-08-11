@@ -351,8 +351,6 @@ class Menu extends Component
         return Meja::find($this->mejaId) ?? new Meja;
     }
 
-    #[Layout('layouts.customer')]
-    #[Title('Menu')]
     public function render()
     {
         return view('livewire.customer.menu', [
