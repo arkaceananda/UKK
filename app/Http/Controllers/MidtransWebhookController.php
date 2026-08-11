@@ -15,9 +15,9 @@ class MidtransWebhookController extends Controller
         $serverKey = config('services.midtrans.server_key');
         $signatureKey = $request->input('signature_key');
         $orderId = $request->input('order_id');
-        $statusCode = $request->input('status_code');
+        $grossAmount = $request->input('gross_amount');
 
-        $expectedSignature = hash('sha512', $orderId.$statusCode.$serverKey.$request->input('transaction_status'));
+        $expectedSignature = hash('sha512', $orderId.$statusCode.$grossAmount.$serverKey);
 
         if ($signatureKey !== $expectedSignature) {
             Log::warning('Invalid Midtrans webhook signature', [

@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,8 +24,15 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'role' => UserRole::class,
         ];
+    }
+
+    protected function role(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $value instanceof UserRole ? $value : (UserRole::tryFromValue($value) ?? UserRole::Kasir),
+            set: fn ($value) => $value instanceof UserRole ? $value->value : ucfirst(strtolower((string) $value)),
+        );
     }
 
     public function isAdmin(): bool
