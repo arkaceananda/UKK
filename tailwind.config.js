@@ -64,8 +64,9 @@ export default {
         //  tag kategori "Minuman"
         merak: '#2C8C82',
 
-        // tag kategori "makanan" atau aksen ilustrasi.
-        terong: '#7B5EA7',
+        // Chart colors (used in ApexCharts JS)
+        'chart-yellow': '#EAB308',
+        'chart-purple': '#9B59B6',
       },
 
       // Tombol utama (Checkout, Simpan)  → bg-accent hover:bg-accent-dark, text-ink
