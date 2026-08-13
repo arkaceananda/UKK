@@ -2,109 +2,48 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
+use Intervention\Image\ImageManagerStatic as Image;
 
 class ImageCacheService
 {
-    public function getCachedUrl(string $imagePath, int $width = 400, int $quality = 75): string
+    protected string $cachePath = 'optimized';
+
+    public function optimizeAndCache(string $originalPath): string
     {
-        $cacheKey = 'image:'.md5($imagePath.'-'.$width.'-'.$quality);
+        $fileName = pathinfo($originalPath, PATHINFO_FILENAME);
+        $optimizedPath = $this->cachePath.'/'.$fileName.'.webp';
+        $fullOptimizedPath = Storage::disk('public')->path($optimizedPath);
+        $fullOriginalPath = Storage::disk('public')->path($originalPath);
 
-        $cached = Cache::get($cacheKey);
-
-        if ($cached) {
-            return $cached;
-        }
-
-        $url = $this->generateOptimizedUrl($imagePath, $width, $quality);
-
-        Cache::put($cacheKey, $url, 86400);
-
-        return $url;
-    }
-
-    public function getLazyImageData(string $imagePath, int $width = 400): array
-    {
-        $src = $this->getCachedUrl($imagePath, $width);
-        $placeholder = 'data:image/svg+xml,'.urlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect fill="#1E2229" width="400" height="400"/></svg>');
-
-        return [
-            'src' => $src,
-            'placeholder' => $placeholder,
-        ];
-    }
-
-    public function invalidateImageCache(string $imagePath): void
-    {
-        Cache::forget('image:'.md5($imagePath.'-400-75'));
-
-        $optimizedPath = 'optimized/'.md5($imagePath.'-400-75').'.webp';
-        if (Storage::disk('public')->exists($optimizedPath)) {
-            Storage::disk('public')->delete($optimizedPath);
-        }
-    }
-
-    public function invalidateAllImageCache(): void
-    {
-        Cache::flush();
-
-        $optimizedDir = 'optimized';
-        if (Storage::disk('public')->exists($optimizedDir)) {
-            Storage::disk('public')->deleteDirectory($optimizedDir);
-        }
-    }
-
-    private function generateOptimizedUrl(string $imagePath, int $width, int $quality): string
-    {
-        if (! Storage::disk('public')->exists($imagePath)) {
-            return '';
-        }
-
-        $originalPath = Storage::disk('public')->path($imagePath);
-        $extension = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION));
-
-        if ($extension === 'webp') {
-            return asset('storage/'.$imagePath);
-        }
-
-        $optimizedPath = 'optimized/'.md5($imagePath.'-'.$width.'-'.$quality).'.webp';
-        $optimizedFullPath = Storage::disk('public')->path($optimizedPath);
-
-        if (Storage::disk('public')->exists($optimizedPath)) {
-            return asset('storage/'.$optimizedPath);
-        }
-
-        try {
-            Storage::disk('public')->makeDirectory('optimized');
-
-            $manager = new ImageManager([
-                'driver' => 'gd',
-            ]);
-            $image = $manager->read($originalPath);
-
-            if ($image->width() > $width) {
-                $image->scale(width: $width);
+        if (! Storage::disk('public')->exists($optimizedPath)) {
+            try {
+                Storage::disk('public')->makeDirectory($this->cachePath);
+                Image::make($fullOriginalPath)
+                    ->encode('webp', 80)
+                    ->save($fullOptimizedPath);
+            } catch (\Exception $e) {
+                // Log the error if optimization fails, return original path
+                return $originalPath;
             }
-
-            $image->toWebp($quality);
-
-            $image->save($optimizedFullPath);
-
-            return asset('storage/'.$optimizedPath);
-        } catch (\Exception $e) {
-            Log::warning('Gagal mengoptimasi gambar: '.$imagePath, ['error' => $e->getMessage()]);
-
-            return asset('storage/'.$imagePath);
         }
+
+        return $optimizedPath;
     }
 
-    public function warmCache(array $imagePaths, int $width = 400, int $quality = 75): void
+    public function getCachedUrl(string $path): string
     {
-        foreach ($imagePaths as $path) {
-            $this->getCachedUrl($path, $width, $quality);
-        }
+        $optimizedPath = $this->optimizeAndCache($path);
+
+        return Storage::url($optimizedPath);
+    }
+
+    public function invalidateImageCache(string $path)
+    {
+        $fileName = pathinfo($path, PATHINFO_FILENAME);
+        $optimizedPath = $this->cachePath.'/'.$fileName.'.webp';
+
+        // Hapus file yang dioptimasi dan juga file aslinya jika masih ada
+        Storage::disk('public')->delete([$optimizedPath, $path]);
     }
 }

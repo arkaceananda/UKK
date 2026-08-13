@@ -9,6 +9,15 @@
         --text-main: #1C1E24;
         --text-muted: #8B8578;
         --border-color: #E3DCC9;
+
+        /* Chart colors (light mode) */
+        --chart-text: #6B7280;
+        --chart-grid: rgba(0, 0, 0, 0.08);
+        --chart-daun: #4E9A51;
+        --chart-cabai: #D64545;
+        --chart-gas: #4FA8C9;
+        --chart-yellow: #EAB308;
+        --chart-purple: #9B59B6;
     }
 
     html.dark {
@@ -17,6 +26,15 @@
         --text-main: #EDE7DA;
         --text-muted: #8891A3;
         --border-color: #2A2F3A;
+
+        /* Chart colors (dark mode) */
+        --chart-text: #B0B0B0;
+        --chart-grid: rgba(255, 255, 255, 0.08);
+        --chart-daun: #4E9A51;
+        --chart-cabai: #D64545;
+        --chart-gas: #4FA8C9;
+        --chart-yellow: #EAB308;
+        --chart-purple: #9B59B6;
     }
 
     body {

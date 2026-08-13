@@ -62,9 +62,7 @@ class AuthenticationTest extends TestCase
 
         $response = $this->get('/dashboard');
 
-        $response
-            ->assertOk()
-            ->assertSeeVolt('layout.navigation');
+        $response->assertRedirect(route('admin.dashboard'));
     }
 
     public function test_users_can_logout(): void

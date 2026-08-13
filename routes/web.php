@@ -2,9 +2,14 @@
 
 use App\Enums\StatusMeja;
 use App\Enums\UserRole;
+use App\Http\Controllers\Admin\ChartDataController;
+use App\Http\Controllers\Admin\RecapExportController;
+use App\Http\Controllers\Admin\SalesReportController;
 use App\Http\Controllers\Kasir\DashboardController;
 use App\Http\Controllers\MejaScanController;
 use App\Http\Controllers\MidtransWebhookController;
+use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\Recaps;
 use App\Livewire\Customer\Checkout;
 use App\Livewire\Customer\QrisPayment;
 use App\Livewire\OrderStatus;
@@ -14,8 +19,13 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'welcome');
 
 Route::get('/dashboard', function () {
-    if (auth()->check() && auth()->user()->role === UserRole::Kasir) {
-        return redirect()->route('kasir.dashboard');
+    if (auth()->check()) {
+        if (auth()->user()->role === UserRole::Admin) {
+            return redirect()->route('admin.dashboard');
+        }
+        if (auth()->user()->role === UserRole::Kasir) {
+            return redirect()->route('kasir.dashboard');
+        }
     }
 
     return view('dashboard');
@@ -75,3 +85,13 @@ Route::middleware(['auth', 'kasir'])->prefix('kasir')->name('kasir.')->group(fun
 });
 
 require __DIR__.'/auth.php';
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', Dashboard::class)->name('dashboard');
+    Route::get('/recaps', Recaps::class)->name('recaps');
+    Route::get('/recaps/export/{recap}', [RecapExportController::class, 'exportCsv'])->name('recaps.export');
+    Route::get('/api/chart/sales', [ChartDataController::class, 'sales'])->name('api.chart.sales');
+    Route::get('/api/chart/top-menu', [ChartDataController::class, 'topMenu'])->name('api.chart.top-menu');
+    Route::get('/sales/export/{filter?}', [SalesReportController::class, 'exportSales'])->name('sales.export');
+    Route::get('/top-menu/export/{filter?}', [SalesReportController::class, 'exportTopMenu'])->name('top-menu.export');
+});

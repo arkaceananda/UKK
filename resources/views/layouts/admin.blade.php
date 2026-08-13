@@ -51,11 +51,11 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <span>Recap</span>
                 </a>
-                <a href="#menu-manager" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang transition-colors font-medium">
+                <a href="{{ route('admin.dashboard') }}#menu-manager" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang transition-colors font-medium">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     <span>Manajemen Menu</span>
                 </a>
-                <a href="#table-manager" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang transition-colors font-medium">
+                <a href="{{ route('admin.dashboard') }}#table-manager" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang transition-colors font-medium">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                     <span>Manajemen Meja</span>
                 </a>
