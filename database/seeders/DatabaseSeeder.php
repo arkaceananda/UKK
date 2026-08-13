@@ -65,7 +65,7 @@ class DatabaseSeeder extends Seeder
             'kategori_id' => $nasiKatsu->id, 'nama' => 'Nasi Katsu Black Paper',
             'harga' => 17000, 'stok' => 10, 'deskripsi' => 'Nasi dengan katsu ayam black paper',
         ]);
-        $chickenRiceBowl = Menu::factory()->create([
+        $chickenRiceBowlMenu = Menu::factory()->create([
             'kategori_id' => $chickenRiceBowl->id, 'nama' => 'Chicken Rice Bowl',
             'harga' => 15000, 'stok' => 25, 'deskripsi' => 'Rice bowl dengan ayam goreng crispy',
         ]);
@@ -119,7 +119,7 @@ class DatabaseSeeder extends Seeder
             'total_harga' => 48000, 'created_at' => now()->subDays(3),
         ]);
         DetailPesanan::factory()->create([
-            'pesanan_id' => $pesanan1->id, 'menu_id' => $nasiGoreng->id,
+            'pesanan_id' => $pesanan1->id, 'menu_id' => $nasiGorengTelur->id,
             'jumlah' => 1, 'harga_satuan' => 15000, 'subtotal' => 15000,
         ]);
         DetailPesanan::factory()->create([

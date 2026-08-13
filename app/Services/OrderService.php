@@ -11,6 +11,7 @@ use App\Models\Meja;
 use App\Models\Menu;
 use App\Models\Pesanan;
 use App\Models\Transaksi;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class OrderService
@@ -76,6 +77,8 @@ class OrderService
                 logger()->warning('Midtrans QRIS charge failed: '.$e->getMessage());
             }
         }
+
+        Cache::flush();
 
         $pesanan->load(['meja', 'details.menu', 'transaksi']);
 
