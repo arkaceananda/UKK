@@ -3,6 +3,8 @@
 namespace App\Livewire\Kasir;
 
 use App\Enums\MetodeBayar;
+use App\Enums\StatusMeja;
+use App\Enums\StatusMenu;
 use App\Events\OrderPlaced;
 use App\Models\Meja;
 use App\Models\Menu;
@@ -25,8 +27,8 @@ class ManualOrder extends Component
 
     public function mount()
     {
-        $this->mejaList = Meja::where('status', 'Aktif')->get();
-        $this->menuItems = Menu::where('status', 'Tersedia')->with('kategori')->get();
+        $this->mejaList = Meja::where('status', StatusMeja::Aktif)->get();
+        $this->menuItems = Menu::where('status', StatusMenu::Tersedia)->with('kategori')->get();
         $this->orderItems[] = ['menu_id' => '', 'jumlah' => 1, 'harga' => 0];
         $this->calculateTotal();
     }
@@ -50,7 +52,7 @@ class ManualOrder extends Component
     {
         if (preg_match('/orderItems\.(\d+)\.menu_id/', $property, $matches)) {
             $index = (int) $matches[1];
-            if ($value) { 
+            if ($value) {
                 $menu = Menu::find($value);
                 if ($menu) {
                     $this->orderItems[$index]['harga'] = $menu->harga;

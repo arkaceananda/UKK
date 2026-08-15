@@ -14,9 +14,16 @@ class MenuTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function validSession(Meja $meja): array
+    {
+        return ['assigned_meja_id' => $meja->id, 'assigned_meja_token' => $meja->token];
+    }
+
     public function test_customer_menu_page_loads_successfully(): void
     {
-        $response = $this->get('/menu');
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
+
+        $response = $this->withSession($this->validSession($meja))->get('/menu');
 
         $response->assertStatus(200);
         $response->assertSee('BurjoOrder');
@@ -31,10 +38,10 @@ class MenuTest extends TestCase
             'stok' => 10,
         ]);
 
-        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif, 'is_occupied' => true]);
-        $this->withSession(['meja_token_'.$meja->id => $meja->token]);
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
 
-        $response = $this->get(route('customer.menu', ['meja' => $meja->id]));
+        $response = $this->withSession($this->validSession($meja))
+            ->get(route('customer.menu', ['meja' => $meja->id]));
 
         $response->assertStatus(200);
         $response->assertSee($kategori->nama);
@@ -54,7 +61,9 @@ class MenuTest extends TestCase
             'stok' => 0,
         ]);
 
-        $response = $this->get('/menu');
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
+
+        $response = $this->withSession($this->validSession($meja))->get('/menu');
 
         $response->assertStatus(200);
     }
@@ -63,7 +72,9 @@ class MenuTest extends TestCase
     {
         Meja::factory()->create(['status' => StatusMeja::Aktif]);
 
-        $response = $this->get('/menu');
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
+
+        $response = $this->withSession($this->validSession($meja))->get('/menu');
 
         $response->assertStatus(200);
     }
@@ -72,14 +83,16 @@ class MenuTest extends TestCase
     {
         Meja::factory()->create(['status' => StatusMeja::Nonaktif]);
 
-        $response = $this->get('/menu');
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
+
+        $response = $this->withSession($this->validSession($meja))->get('/menu');
 
         $response->assertStatus(200);
     }
 
     public function test_menu_requires_valid_table_session(): void
     {
-        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif, 'is_occupied' => true]);
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
 
         $response = $this->get(route('customer.menu', ['meja' => $meja->id]));
 
@@ -96,10 +109,10 @@ class MenuTest extends TestCase
             'stok' => 10,
         ]);
 
-        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif, 'is_occupied' => true]);
-        $this->withSession(['meja_token_'.$meja->id => $meja->token]);
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
 
-        $response = $this->get(route('customer.menu', ['meja' => $meja->id]));
+        $response = $this->withSession($this->validSession($meja))
+            ->get(route('customer.menu', ['meja' => $meja->id]));
 
         $response->assertStatus(200);
         $response->assertSee($kategori->nama);

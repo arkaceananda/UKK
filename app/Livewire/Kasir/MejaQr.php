@@ -27,6 +27,7 @@ class MejaQr extends Component
             ->map(fn (Meja $meja) => [
                 'id' => $meja->id,
                 'nomor' => $meja->nomor,
+                'token' => $meja->token,
                 'is_occupied' => (bool) $meja->is_occupied,
             ])
             ->values()
@@ -36,9 +37,18 @@ class MejaQr extends Component
     public function releaseMeja(int $mejaId): void
     {
         $meja = Meja::findOrFail($mejaId);
-        $meja->resetSesi();
+        $meja->update(['is_occupied' => false]);
 
-        $this->dispatch('notify', message: 'Meja #'.$meja->nomor.' berhasil di-release.', type: 'success');
+        $this->dispatch('notify', message: 'Meja #'.$meja->nomor.' dibebaskan.', type: 'success');
+        $this->loadMejas();
+    }
+
+    public function occupyMeja(int $mejaId): void
+    {
+        $meja = Meja::findOrFail($mejaId);
+        $meja->update(['is_occupied' => true]);
+
+        $this->dispatch('notify', message: 'Meja #'.$meja->nomor.' ditandai terisi.', type: 'success');
         $this->loadMejas();
     }
 

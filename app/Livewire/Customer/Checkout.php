@@ -56,10 +56,9 @@ class Checkout extends Component
         $this->selectedMejaId = (string) $meja->id;
         $this->cart = session('burjo_cart_'.$this->mejaId, []);
 
-        $this->tableToken = session('meja_token_'.$meja->id);
-        $this->verified = $this->tableToken !== null
-            && $this->tableToken === $meja->token
-            && (bool) $meja->is_occupied;
+        $this->tableToken = session('assigned_meja_token');
+        $this->verified = session('assigned_meja_id') === $meja->id
+            && $this->tableToken === $meja->token;
 
         $firstCategory = KategoriMenu::whereHas('menu', fn ($q) => $q->where('status', StatusMenu::Tersedia))
             ->first();
@@ -129,21 +128,9 @@ class Checkout extends Component
         session(['burjo_cart_'.$this->mejaId => $this->cart]);
     }
 
-    public function removeItem(int $menuId): void
+    public function removeItem(int|string $key): void
     {
-        $cartKey = null;
-        foreach ($this->cart as $key => $item) {
-            if (isset($item['menu_id']) && $item['menu_id'] == $menuId) {
-                $cartKey = $key;
-                break;
-            }
-        }
-
-        if ($cartKey === null) {
-            return;
-        }
-
-        unset($this->cart[$cartKey]);
+        unset($this->cart[$key]);
 
         $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
         $total = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
@@ -151,30 +138,24 @@ class Checkout extends Component
         session(['burjo_cart_'.$this->mejaId => $this->cart]);
     }
 
-    public function removeFromCart(int $menuId): void
+    public function removeFromCart(int|string $key): void
     {
-        $this->removeItem($menuId);
+        $this->removeItem($key);
     }
 
-    public function updateQuantity(int $menuId, int $jumlah): void
+    public function updateQuantity(int|string $key, int $jumlah): void
     {
-        $cartKey = null;
-        foreach ($this->cart as $key => $item) {
-            if (isset($item['menu_id']) && $item['menu_id'] == $menuId) {
-                $cartKey = $key;
-                break;
-            }
-        }
-
-        if ($cartKey === null) {
+        if (! isset($this->cart[$key])) {
             return;
         }
 
         if ($jumlah <= 0) {
-            $this->removeItem($menuId);
+            $this->removeItem($key);
 
             return;
         }
+
+        [$menuId] = $this->parseCartKey($key);
 
         $lock = Cache::lock('menu-stock:'.$menuId, 3);
 
@@ -193,7 +174,7 @@ class Checkout extends Component
                 return;
             }
 
-            $this->cart[$cartKey]['jumlah'] = $jumlah;
+            $this->cart[$key]['jumlah'] = $jumlah;
         } finally {
             $lock->release();
         }
@@ -202,6 +183,17 @@ class Checkout extends Component
         $total = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
         $this->dispatch('cart-updated', count: $count, total: $total);
         session(['burjo_cart_'.$this->mejaId => $this->cart]);
+    }
+
+    protected function parseCartKey(int|string $key): array
+    {
+        if (is_string($key) && str_contains($key, '__')) {
+            [$menuId, $option] = explode('__', $key, 2);
+
+            return [(int) $menuId, $option];
+        }
+
+        return [(int) $key, null];
     }
 
     public function selectCategory(string $categoryId): void
@@ -235,6 +227,7 @@ class Checkout extends Component
                 array_map(fn ($item) => [
                     'menu_id' => $item['menu_id'],
                     'jumlah' => $item['jumlah'],
+                    'selected_option' => $item['selected_option'] ?? null,
                 ], $this->cart),
                 MetodeBayar::from($this->metodeBayar),
                 $this->notes !== '' ? $this->notes : null,
@@ -256,7 +249,11 @@ class Checkout extends Component
         $this->dispatch('notify', message: 'Pesanan berhasil dibuat!', type: 'success');
         $this->dispatch('order-placed', orderId: $pesanan->id);
 
-        event(new OrderPlaced($pesanan->fresh()));
+        try {
+            event(new OrderPlaced($pesanan->fresh()));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         if ($pesanan->transaksi?->metode_bayar === MetodeBayar::Qris) {
             $this->redirectRoute('customer.payment-qris', $pesanan->transaksi->id);
@@ -379,6 +376,7 @@ class Checkout extends Component
             'menus' => $this->menus,
             'burjoName' => $this->burjoName,
             'nomorMeja' => $this->nomorMeja,
+            'mejaToken' => $this->tableToken,
             'cartCount' => $cartCount,
             'cartTotal' => collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']),
             'subtotal' => $subtotal,

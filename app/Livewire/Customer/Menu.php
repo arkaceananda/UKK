@@ -42,9 +42,21 @@ class Menu extends Component
 
     public string $metodeBayar = 'tunai';
 
-    public ?int $editingQuantityId = null;
+    public array $selectedOptions = [];
+
+    public int|string|null $editingQuantityId = null;
 
     public int $editingQuantity = 1;
+
+    public array $menusAll = [];
+
+    public int $menuPage = 1;
+
+    public bool $hasMoreMenus = true;
+
+    public bool $loadingMore = false;
+
+    public int $menuPerPage = 18;
 
     protected $queryString = [
         'selectedCategory' => ['except' => ''],
@@ -57,10 +69,9 @@ class Menu extends Component
         $this->cart = session('burjo_cart_'.$this->mejaId, []);
         $this->selectedMejaId = (string) $this->mejaId;
 
-        $this->tableToken = session('meja_token_'.$meja->id);
-        $this->verified = $this->tableToken !== null
-            && $this->tableToken === $meja->token
-            && (bool) $meja->is_occupied;
+        $this->tableToken = session('assigned_meja_token');
+        $this->verified = session('assigned_meja_id') === $meja->id
+            && $this->tableToken === $meja->token;
 
         $firstCategory = KategoriMenu::whereHas('menu', fn ($q) => $q->where('status', StatusMenu::Tersedia))
             ->first();
@@ -68,10 +79,82 @@ class Menu extends Component
         if ($this->selectedCategory === '' && $firstCategory) {
             $this->selectedCategory = (string) $firstCategory->id;
         }
+
+        $this->resetMenus();
     }
 
-    public function addToCart(int $menuId): void
+    public function updatedSearchQuery(): void
     {
+        $this->resetMenus();
+    }
+
+    protected function loadMenuPage(): void
+    {
+        $query = MenuModel::query()
+            ->where('status', StatusMenu::Tersedia)
+            ->where('stok', '>', 0);
+
+        if ($this->searchQuery !== '') {
+            $query->where('nama', 'ilike', '%'.$this->searchQuery.'%');
+        }
+
+        $pageItems = $query->with('kategori')
+            ->orderBy('kategori_id')
+            ->orderBy('nama')
+            ->forPage($this->menuPage, $this->menuPerPage)
+            ->get();
+
+        $imageService = app(ImageCacheService::class);
+
+        $mapped = $pageItems->map(function ($menu) use ($imageService) {
+            return [
+                'id' => $menu->id,
+                'nama' => $menu->nama,
+                'deskripsi' => $menu->deskripsi,
+                'harga' => (float) $menu->harga,
+                'foto' => $menu->foto,
+                'kategori' => $menu->kategori?->nama,
+                'cachedImage' => $menu->foto ? $imageService->getCachedUrl($menu->foto) : '',
+                'is_available' => $menu->isAvailable(),
+                'options' => $menu->options ?? [],
+            ];
+        })->all();
+
+        if ($this->menuPage === 1) {
+            $this->menusAll = $mapped;
+        } else {
+            $this->menusAll = array_merge($this->menusAll, $mapped);
+        }
+
+        $this->hasMoreMenus = $pageItems->count() >= $this->menuPerPage;
+    }
+
+    public function resetMenus(): void
+    {
+        $this->menuPage = 1;
+        $this->hasMoreMenus = true;
+        $this->loadingMore = false;
+        $this->loadMenuPage();
+    }
+
+    public function loadMoreMenus(): void
+    {
+        if ($this->loadingMore || ! $this->hasMoreMenus) {
+            return;
+        }
+
+        $this->loadingMore = true;
+        $this->menuPage++;
+        $this->loadMenuPage();
+        $this->loadingMore = false;
+
+        $this->dispatch('refresh-images');
+    }
+
+    public function addToCart(int|string $key): void
+    {
+        [$menuId, $selectedOption] = $this->parseCartKey($key);
+
         $lock = Cache::lock('menu-stock:'.$menuId, 3);
 
         if (! $lock->get()) {
@@ -89,15 +172,13 @@ class Menu extends Component
                 return;
             }
 
-            $cartKey = null;
-            foreach ($this->cart as $key => $item) {
-                if (isset($item['menu_id']) && $item['menu_id'] == $menuId) {
-                    $cartKey = $key;
-                    break;
-                }
+            if (! empty($menu->options)) {
+                $selectedOption = $this->selectedOptions[$menuId] ?? $menu->options[0] ?? null;
             }
 
-            if ($cartKey !== null) {
+            $cartKey = $selectedOption !== null ? $menuId.'__'.$selectedOption : $menuId;
+
+            if (isset($this->cart[$cartKey])) {
                 if ($this->cart[$cartKey]['jumlah'] >= $menu->stok) {
                     $this->dispatch('notify', message: 'Stok tidak cukup', type: 'error');
 
@@ -106,13 +187,14 @@ class Menu extends Component
 
                 $this->cart[$cartKey]['jumlah']++;
             } else {
-                $this->cart[$menuId] = [
+                $this->cart[$cartKey] = [
                     'menu_id' => $menuId,
                     'nama' => $menu->nama,
                     'harga' => (float) $menu->harga,
                     'jumlah' => 1,
                     'foto' => $menu->foto,
                     'is_available' => $menu->isAvailable(),
+                    'selected_option' => $selectedOption,
                 ];
             }
         } finally {
@@ -125,35 +207,16 @@ class Menu extends Component
         session(['burjo_cart_'.$this->mejaId => $this->cart]);
     }
 
-    public function decrementQuantity(int $menuId): void
+    public function decrementQuantity(int|string $key): void
     {
-        $cartKey = null;
-        foreach ($this->cart as $key => $item) {
-            if (isset($item['menu_id']) && $item['menu_id'] == $menuId) {
-                $cartKey = $key;
-                break;
-            }
+        if (! isset($this->cart[$key])) {
+            return;
         }
 
-        if ($cartKey !== null) {
-            if ($this->cart[$cartKey]['jumlah'] > 1) {
-                $this->cart[$cartKey]['jumlah']--;
-            } else {
-                unset($this->cart[$cartKey]);
-            }
-            $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
-            $total = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
-            $this->dispatch('cart-updated', count: $count, total: $total);
-            session(['burjo_cart_'.$this->mejaId => $this->cart]);
-        }
-    }
-
-    public function removeFromCart(int $menuId): void
-    {
-        foreach ($this->cart as $key => $item) {
-            if (isset($item['menu_id']) && $item['menu_id'] == $menuId) {
-                unset($this->cart[$key]);
-            }
+        if ($this->cart[$key]['jumlah'] > 1) {
+            $this->cart[$key]['jumlah']--;
+        } else {
+            unset($this->cart[$key]);
         }
 
         $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
@@ -162,10 +225,31 @@ class Menu extends Component
         session(['burjo_cart_'.$this->mejaId => $this->cart]);
     }
 
-    public function startEditingQuantity(int $menuId): void
+    public function removeFromCart(int|string $key): void
     {
-        $this->editingQuantityId = $menuId;
-        $this->editingQuantity = $this->cart[$menuId]['jumlah'] ?? 1;
+        unset($this->cart[$key]);
+
+        $count = collect($this->cart)->sum(fn ($item) => $item['jumlah']);
+        $total = collect($this->cart)->sum(fn ($item) => $item['harga'] * $item['jumlah']);
+        $this->dispatch('cart-updated', count: $count, total: $total);
+        session(['burjo_cart_'.$this->mejaId => $this->cart]);
+    }
+
+    protected function parseCartKey(int|string $key): array
+    {
+        if (is_string($key) && str_contains($key, '__')) {
+            [$menuId, $option] = explode('__', $key, 2);
+
+            return [(int) $menuId, $option];
+        }
+
+        return [(int) $key, null];
+    }
+
+    public function startEditingQuantity(int|string $key): void
+    {
+        $this->editingQuantityId = $key;
+        $this->editingQuantity = $this->cart[$key]['jumlah'] ?? 1;
     }
 
     public function confirmQuantity(): void
@@ -174,14 +258,16 @@ class Menu extends Component
             return;
         }
 
-        $menuId = $this->editingQuantityId;
+        $key = $this->editingQuantityId;
 
         if ($this->editingQuantity <= 0) {
-            $this->removeFromCart($menuId);
+            $this->removeFromCart($key);
             $this->editingQuantityId = null;
 
             return;
         }
+
+        [$menuId] = $this->parseCartKey($key);
 
         $lock = Cache::lock('menu-stock:'.$menuId, 3);
 
@@ -200,7 +286,10 @@ class Menu extends Component
                 return;
             }
 
-            $this->cart[$menuId]['jumlah'] = $this->editingQuantity;
+            if (isset($this->cart[$key])) {
+                $this->cart[$key]['jumlah'] = $this->editingQuantity;
+            }
+
             $this->editingQuantityId = null;
         } finally {
             $lock->release();
@@ -237,6 +326,7 @@ class Menu extends Component
                 array_map(fn ($item) => [
                     'menu_id' => $item['menu_id'],
                     'jumlah' => $item['jumlah'],
+                    'selected_option' => $item['selected_option'] ?? null,
                 ], $this->cart),
                 MetodeBayar::from($this->metodeBayar),
                 $this->notes !== '' ? $this->notes : null,
@@ -257,7 +347,11 @@ class Menu extends Component
         $this->dispatch('notify', message: 'Pesanan berhasil dibuat!', type: 'success');
         $this->dispatch('order-placed', orderId: $pesanan->id);
 
-        event(new OrderPlaced($pesanan->fresh()));
+        try {
+            event(new OrderPlaced($pesanan->fresh()));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         if ($pesanan->transaksi?->metode_bayar === MetodeBayar::Qris) {
             $this->redirectRoute('customer.payment-qris', $pesanan->transaksi->id);
@@ -278,7 +372,7 @@ class Menu extends Component
     #[On('refreshStock')]
     public function refreshStock(): void
     {
-        unset($this->menus);
+        $this->resetMenus();
         unset($this->cartCount);
         unset($this->cartTotal);
     }
@@ -315,33 +409,7 @@ class Menu extends Component
     #[Computed]
     public function menus(): Collection
     {
-        $query = MenuModel::query()
-            ->where('status', StatusMenu::Tersedia)
-            ->where('stok', '>', 0);
-
-        if ($this->searchQuery !== '') {
-            $query->where('nama', 'ilike', '%'.$this->searchQuery.'%');
-        }
-
-        $menus = $query->with('kategori')
-            ->orderBy('kategori_id')
-            ->orderBy('nama')
-            ->get();
-
-        $imageService = app(ImageCacheService::class);
-
-        return $menus->map(function ($menu) use ($imageService) {
-            return [
-                'id' => $menu->id,
-                'nama' => $menu->nama,
-                'deskripsi' => $menu->deskripsi,
-                'harga' => (float) $menu->harga,
-                'foto' => $menu->foto,
-                'kategori' => $menu->kategori?->nama,
-                'cachedImage' => $menu->foto ? $imageService->getCachedUrl($menu->foto) : '',
-                'is_available' => $menu->isAvailable(),
-            ];
-        });
+        return collect($this->menusAll);
     }
 
     #[Computed]

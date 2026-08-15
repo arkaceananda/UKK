@@ -16,7 +16,7 @@ class Menu extends Model
 
     protected $table = 'menu';
 
-    protected $fillable = ['kategori_id', 'nama', 'deskripsi', 'harga', 'foto', 'stok', 'status'];
+    protected $fillable = ['kategori_id', 'nama', 'deskripsi', 'harga', 'foto', 'stok', 'status', 'options'];
 
     protected function casts(): array
     {
@@ -24,6 +24,7 @@ class Menu extends Model
             'harga' => 'decimal:2',
             'stok' => 'integer',
             'status' => StatusMenu::class,
+            'options' => 'array',
         ];
     }
 

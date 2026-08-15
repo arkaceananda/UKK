@@ -20,7 +20,7 @@
                         <div class="space-y-1.5 mb-3">
                             @foreach($order->details as $detail)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}</span>
+                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}@if($detail->selected_option) ({{ ucfirst($detail->selected_option) }})@endif</span>
                                     <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             @endforeach
@@ -45,6 +45,15 @@
                             >
                                 Tolak
                             </button>
+                            <a 
+                                href="{{ route('kasir.ticket', $order->id) }}" 
+                                target="_blank"
+                                title="Cetak Tiket Dapur"
+                                class="flex-1 px-3 py-2.5 bg-gas text-white rounded-xl text-sm font-semibold hover:bg-gas/90 transition-colors flex items-center justify-center gap-1"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                                Tiket
+                            </a>
                         </div>
                     </div>
                 @empty
@@ -76,7 +85,7 @@
                         <div class="space-y-1.5 mb-3">
                             @foreach($order->details as $detail)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}</span>
+                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}@if($detail->selected_option) ({{ ucfirst($detail->selected_option) }})@endif</span>
                                     <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             @endforeach
@@ -117,7 +126,7 @@
                         <div class="space-y-1.5 mb-3">
                             @foreach($order->details as $detail)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}</span>
+                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}@if($detail->selected_option) ({{ ucfirst($detail->selected_option) }})@endif</span>
                                     <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             @endforeach
@@ -172,7 +181,7 @@
                         <div class="space-y-1.5">
                             @foreach($order->details as $detail)
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}</span>
+                                    <span class="text-muted-dark dark:text-muted-light">{{ $detail->jumlah }}x {{ $detail->menu->nama }}@if($detail->selected_option) ({{ ucfirst($detail->selected_option) }})@endif</span>
                                     <span class="text-arang dark:text-kertas font-mono text-xs">Rp {{ number_format($detail->harga_satuan * $detail->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             @endforeach

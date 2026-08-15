@@ -5,7 +5,7 @@
         </div>
         <h2 class="font-display font-semibold text-lg text-arang dark:text-kertas mb-2">Silakan Scan Ulang QR Meja</h2>
         <p class="text-sm text-muted-dark dark:text-muted-light mb-6 max-w-xs">Sesi meja ini sudah berakhir. Scan QR code di meja untuk mulai memesan kembali.</p>
-        <a href="{{ route('meja.scan', $mejaId) }}" class="px-6 py-3 bg-accent hover:bg-accent-dark text-ink font-semibold text-sm rounded-xl transition-colors">Scan Ulang</a>
+        <a href="{{ route('meja.assign', $mejaToken) }}" class="px-6 py-3 bg-accent hover:bg-accent-dark text-ink font-semibold text-sm rounded-xl transition-colors">Scan Ulang</a>
     </div>
 @else
 <div class="pb-32" wire:on.window="refreshStock" wire:poll.15s="refreshStock">
@@ -33,10 +33,10 @@
 
             @if(count($cart) > 0)
                 <div class="space-y-3">
-                    @foreach($cart as $item)
+                    @foreach($cart as $key => $item)
                         <div class="relative flex gap-3 bg-paper dark:bg-ink rounded-xl p-3">
                             <button
-                                wire:click="removeItem({{ $item['menu_id'] }})"
+                                wire:click="removeItem('{{ $key }}')"
                                 class="absolute top-2 right-2 text-muted-dark dark:text-muted-light hover:text-cabai transition-colors"
                                 aria-label="Hapus {{ $item['nama'] }}"
                             >
@@ -53,6 +53,9 @@
 
                             <div class="flex-1 min-w-0">
                                 <p class="font-display font-semibold text-sm text-arang dark:text-kertas truncate">{{ $item['nama'] }}</p>
+                                @if(!empty($item['selected_option']))
+                                    <span class="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-accent/15 text-accent">{{ ucfirst($item['selected_option']) }}</span>
+                                @endif
                                 <div class="flex items-center gap-2 mt-1">
                                     <span class="font-mono text-xs text-muted-dark dark:text-muted-light">Qty: {{ $item['jumlah'] }}</span>
                                     <span class="text-muted-dark dark:text-muted-light">×</span>

@@ -15,11 +15,11 @@
             </div>
 
             <div class="flex justify-center mb-3">
-                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(120)->generate(route('meja.scan', $meja['id'])) !!}
+                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(120)->generate(route('meja.assign', $meja['token'])) !!}
             </div>
 
             <div class="text-xs text-muted-dark break-all mb-2">
-                {{ route('meja.scan', $meja['id']) }}
+                {{ route('meja.assign', $meja['token']) }}
             </div>
 
             @if($meja['is_occupied'])
@@ -28,7 +28,15 @@
                     wire:loading.attr="disabled"
                     class="w-full px-3 py-1 text-xs text-cabai bg-paper hover:bg-kertas border border-cabai rounded transition-colors"
                 >
-                    Release Meja
+                    Bebaskan Meja
+                </button>
+            @else
+                <button
+                    wire:click="occupyMeja({{ $meja['id'] }})"
+                    wire:loading.attr="disabled"
+                    class="w-full px-3 py-1 text-xs text-daun bg-paper hover:bg-kertas border border-daun rounded transition-colors"
+                >
+                    Tandai Terisi
                 </button>
             @endif
         </div>

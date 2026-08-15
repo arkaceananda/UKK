@@ -60,7 +60,11 @@ class CartTest extends TestCase
 
     public function test_cart_empty_checkout_hidden(): void
     {
-        $response = $this->get('/menu');
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif]);
+
+        $response = $this->withSession(['assigned_meja_id' => $meja->id, 'assigned_meja_token' => $meja->token])
+            ->get('/menu');
+
         $response->assertStatus(200);
     }
 }
