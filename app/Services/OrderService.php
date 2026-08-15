@@ -21,8 +21,12 @@ class OrderService
      *
      * @param  array<int, array{menu_id: int, jumlah: int, harga_satuan: int}>  $items
      */
-    public function checkout(Meja $meja, array $items, MetodeBayar $metodeBayar = MetodeBayar::Tunai, ?string $catatan = null, ?int $kasirId = null): Pesanan
+    public function checkout(Meja $meja, array $items, MetodeBayar $metodeBayar = MetodeBayar::Tunai, ?string $catatan = null, ?int $kasirId = null, ?string $tableToken = null): Pesanan
     {
+        if ($kasirId === null && ($tableToken === null || $tableToken !== $meja->token || ! $meja->is_occupied)) {
+            throw new \DomainException('Sesi meja telah berakhir. Silakan scan ulang QR meja.');
+        }
+
         $pesanan = DB::transaction(function () use ($meja, $items, $metodeBayar, $catatan, $kasirId) {
             $pesanan = Pesanan::create([
                 'meja_id' => $meja->id,

@@ -28,11 +28,13 @@ class ManualOrder extends Component
         $this->mejaList = Meja::where('status', 'Aktif')->get();
         $this->menuItems = Menu::where('status', 'Tersedia')->with('kategori')->get();
         $this->orderItems[] = ['menu_id' => '', 'jumlah' => 1, 'harga' => 0];
+        $this->calculateTotal();
     }
 
     public function addOrderItem()
     {
         $this->orderItems[] = ['menu_id' => '', 'jumlah' => 1, 'harga' => 0];
+        $this->calculateTotal();
     }
 
     public function removeOrderItem($index)
@@ -44,27 +46,40 @@ class ManualOrder extends Component
         }
     }
 
-    public function updatedOrderItems($value, $key)
+    public function updated($property, $value)
     {
-        if (str_contains($key, '.menu_id') && $value) {
-            $index = explode('.', $key)[0];
-            $menu = Menu::find($value);
-            if ($menu) {
-                $this->orderItems[$index]['harga'] = $menu->harga;
-                $this->calculateTotal();
+        if (preg_match('/orderItems\.(\d+)\.menu_id/', $property, $matches)) {
+            $index = (int) $matches[1];
+            if ($value) { 
+                $menu = Menu::find($value);
+                if ($menu) {
+                    $this->orderItems[$index]['harga'] = $menu->harga;
+                } else {
+                    $this->orderItems[$index]['harga'] = 0; // Menu tidak ditemukan
+                }
+            } else {
+                $this->orderItems[$index]['harga'] = 0; // Menu tidak dipilih
             }
-        }
-
-        if (str_contains($key, '.jumlah')) {
             $this->calculateTotal();
         }
+
+        // Tangani perubahan pada orderItems.INDEX.jumlah
+        if (preg_match('/orderItems\.(\d+)\.jumlah/', $property, $matches)) {
+            $index = (int) $matches[1];
+            // Pastikan kuantitas minimal 1
+            if ($this->orderItems[$index]['jumlah'] < 1) {
+                $this->orderItems[$index]['jumlah'] = 1;
+            }
+            $this->calculateTotal();
+        }
+        // Perubahan pada selectedMeja akan divalidasi saat createOrder, tidak perlu aksi khusus di sini
     }
 
     public function calculateTotal()
     {
         $this->totalHarga = 0;
         foreach ($this->orderItems as $item) {
-            if ($item['menu_id'] && $item['jumlah'] > 0) {
+            if (isset($item['menu_id']) && $item['menu_id'] && isset($item['jumlah']) && $item['jumlah'] > 0) {
                 $this->totalHarga += $item['harga'] * $item['jumlah'];
             }
         }
@@ -108,7 +123,8 @@ class ManualOrder extends Component
 
             $this->dispatch('order-created');
             $this->reset(['selectedMeja', 'orderItems', 'catatan', 'totalHarga']);
-            $this->orderItems[] = ['menu_id' => '', 'jumlah' => 1, 'harga' => 0];
+            $this->orderItems[] = ['menu_id' => '', 'jumlah' => 1, 'harga' => 0]; // Reset ke 1 item kosong
+            $this->calculateTotal(); // Hitung ulang total setelah reset
 
             $this->dispatch('success', message: 'Pesanan manual berhasil dibuat');
         } catch (\Exception $e) {

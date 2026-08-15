@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatusMeja;
+use App\Events\TableStatusUpdated;
 use Database\Factories\MejaFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,12 @@ class Meja extends Model
                 $meja->token = Str::random(64);
             }
         });
+
+        static::updated(function (Meja $meja) {
+            if ($meja->wasChanged(['is_occupied', 'status', 'token'])) {
+                event(new TableStatusUpdated($meja->fresh()));
+            }
+        });
     }
 
     public function pesanan(): HasMany
@@ -46,5 +53,13 @@ class Meja extends Model
         $this->save();
 
         return $this->token;
+    }
+
+    public function resetSesi(): void
+    {
+        $this->forceFill([
+            'token' => Str::random(64),
+            'is_occupied' => false,
+        ])->save();
     }
 }

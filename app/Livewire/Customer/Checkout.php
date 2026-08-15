@@ -24,6 +24,10 @@ class Checkout extends Component
     #[Locked]
     public int $mejaId;
 
+    public ?string $tableToken = null;
+
+    public bool $verified = false;
+
     public array $cart = [];
 
     public string $selectedCategory = '';
@@ -51,6 +55,11 @@ class Checkout extends Component
         $this->mejaId = $meja->id;
         $this->selectedMejaId = (string) $meja->id;
         $this->cart = session('burjo_cart_'.$this->mejaId, []);
+
+        $this->tableToken = session('meja_token_'.$meja->id);
+        $this->verified = $this->tableToken !== null
+            && $this->tableToken === $meja->token
+            && (bool) $meja->is_occupied;
 
         $firstCategory = KategoriMenu::whereHas('menu', fn ($q) => $q->where('status', StatusMenu::Tersedia))
             ->first();
@@ -229,6 +238,8 @@ class Checkout extends Component
                 ], $this->cart),
                 MetodeBayar::from($this->metodeBayar),
                 $this->notes !== '' ? $this->notes : null,
+                null,
+                $this->tableToken,
             );
         } catch (\Exception $e) {
             $this->dispatch('notify', message: 'Gagal membuat pesanan: '.$e->getMessage(), type: 'error');

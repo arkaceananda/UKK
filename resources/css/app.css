@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+    [x-cloak] {
+        display: none !important;
+    }
+
     :root {
         --bg-main: #F6F1E7;
         --bg-surface: #FCFAF5;
