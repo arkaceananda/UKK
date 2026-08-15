@@ -54,7 +54,7 @@ Route::get('/menu/{meja}', function (Meja $meja) {
     return view('customer.menu', compact('meja'));
 })->name('customer.menu');
 
-Route::get('/scan/{token}', [MejaScanController::class, 'show'])
+Route::get('/scan/{meja}', [MejaScanController::class, 'show'])
     ->name('meja.scan');
 
 Route::get('/menu/{meja}/checkout', Checkout::class)->name('customer.checkout');
@@ -75,13 +75,7 @@ Route::middleware(['auth', 'kasir'])->prefix('kasir')->name('kasir.')->group(fun
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::view('/history', 'kasir.history')->name('history');
     Route::view('/manual-order', 'kasir.manual-order')->name('manual-order');
-    Route::match(['GET', 'POST'], '/meja-qr', function () {
-        if (request()->isMethod('POST') && request('release_meja')) {
-            Meja::where('id', request('meja_id'))->update(['is_occupied' => false]);
-        }
-
-        return view('kasir.meja-qr', ['mejas' => Meja::where('status', StatusMeja::Aktif)->get()]);
-    })->name('meja-qr');
+    Route::get('/meja-qr', fn () => view('kasir.meja-qr'))->name('meja-qr');
 });
 
 require __DIR__.'/auth.php';
