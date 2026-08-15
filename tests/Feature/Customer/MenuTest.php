@@ -31,7 +31,10 @@ class MenuTest extends TestCase
             'stok' => 10,
         ]);
 
-        $response = $this->get('/menu');
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif, 'is_occupied' => true]);
+        $this->withSession(['meja_token_'.$meja->id => $meja->token]);
+
+        $response = $this->get(route('customer.menu', ['meja' => $meja->id]));
 
         $response->assertStatus(200);
         $response->assertSee($kategori->nama);
@@ -72,5 +75,34 @@ class MenuTest extends TestCase
         $response = $this->get('/menu');
 
         $response->assertStatus(200);
+    }
+
+    public function test_menu_requires_valid_table_session(): void
+    {
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif, 'is_occupied' => true]);
+
+        $response = $this->get(route('customer.menu', ['meja' => $meja->id]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Silakan Scan Ulang QR Meja');
+    }
+
+    public function test_menu_renders_when_table_session_is_valid(): void
+    {
+        $kategori = KategoriMenu::factory()->create();
+        Menu::factory()->create([
+            'kategori_id' => $kategori->id,
+            'status' => StatusMenu::Tersedia,
+            'stok' => 10,
+        ]);
+
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif, 'is_occupied' => true]);
+        $this->withSession(['meja_token_'.$meja->id => $meja->token]);
+
+        $response = $this->get(route('customer.menu', ['meja' => $meja->id]));
+
+        $response->assertStatus(200);
+        $response->assertSee($kategori->nama);
+        $response->assertDontSee('Silakan Scan Ulang QR Meja');
     }
 }

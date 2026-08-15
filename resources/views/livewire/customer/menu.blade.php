@@ -1,3 +1,13 @@
+@if (! $verified)
+    <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-kertas dark:bg-surface border border-border-light dark:border-border-dark flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-dark dark:text-muted-light"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        </div>
+        <h2 class="font-display font-semibold text-lg text-arang dark:text-kertas mb-2">Silakan Scan Ulang QR Meja</h2>
+        <p class="text-sm text-muted-dark dark:text-muted-light mb-6 max-w-xs">Sesi meja ini sudah berakhir. Scan QR code di meja untuk mulai memesan kembali.</p>
+        <a href="{{ route('meja.scan', $meja->id) }}" class="px-6 py-3 bg-accent hover:bg-accent-dark text-ink font-semibold text-sm rounded-xl transition-colors">Scan Ulang</a>
+    </div>
+@else
 <div class="pb-32" wire:on.window="refreshStock" wire:poll.15s="refreshStock" x-data="{
     activeCategory: null,
     scrollToActiveCategory() {
@@ -221,4 +231,5 @@
             </a>
         </div>
     @endif
-</div>
+    </div>
+@endif

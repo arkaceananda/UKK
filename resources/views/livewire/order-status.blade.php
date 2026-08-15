@@ -118,7 +118,7 @@
             wire:navigate
             class="block text-center w-full py-3 rounded-xl bg-accent hover:bg-accent-dark text-ink font-semibold text-sm"
         >
-            🍽️ Pesan Lagi
+            Pesan Lagi
         </a>
     @endunless
 
