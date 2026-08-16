@@ -22,7 +22,7 @@ class MejaQr extends Component
     {
         $this->mejas = Meja::query()
             ->where('status', StatusMeja::Aktif)
-            ->orderBy('nomor')
+            ->orderByRaw('CAST(nomor AS INTEGER)')
             ->get()
             ->map(fn (Meja $meja) => [
                 'id' => $meja->id,

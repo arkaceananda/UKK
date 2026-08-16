@@ -107,9 +107,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // --- Meja ---
-        for ($i = 1; $i <= 25; $i++) {
-            Meja::factory()->create(['nomor' => (string) $i]);
-        }
+        $this->call(MejaSeeder::class);
 
         // --- Sample orders (3 historical) ---
         $meja1 = Meja::firstWhere('nomor', '1');
