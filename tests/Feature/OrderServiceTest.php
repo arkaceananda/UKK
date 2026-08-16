@@ -40,18 +40,19 @@ class OrderServiceTest extends TestCase
         );
     }
 
-    public function test_checkout_rejects_unoccupied_table(): void
+    public function test_checkout_marks_unoccupied_table_as_occupied(): void
     {
         $meja = Meja::factory()->create(['status' => StatusMeja::Aktif, 'is_occupied' => false]);
         $menu = $this->menu();
 
-        $this->expectException(\DomainException::class);
-
-        app(OrderService::class)->checkout(
+        $pesanan = app(OrderService::class)->checkout(
             $meja,
             [['menu_id' => $menu->id, 'jumlah' => 1]],
             tableToken: $meja->token,
         );
+
+        $this->assertNotNull($pesanan->id);
+        $this->assertTrue($meja->fresh()->is_occupied);
     }
 
     public function test_checkout_with_valid_token_creates_order(): void

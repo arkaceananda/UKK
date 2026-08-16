@@ -115,6 +115,8 @@
         initLazyImages();
         applyTheme();
 
+        window.addEventListener('refresh-images', initLazyImages);
+
         window.addEventListener('notify', function(e) {
             var detail = e.detail;
             if (detail && detail.message) {

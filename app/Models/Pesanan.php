@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\StatusPesanan;
-use App\Jobs\RegenerateTableToken;
 use Database\Factories\PesananFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -57,10 +56,5 @@ class Pesanan extends Model
         }
 
         $this->update(['status' => $nextStatus]);
-
-        if ($nextStatus === StatusPesanan::Selesai && $this->meja) {
-            RegenerateTableToken::dispatch($this->meja)
-                ->delay(now()->addMinutes(5));
-        }
     }
 }

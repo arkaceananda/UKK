@@ -1,19 +1,19 @@
 <?php
 
-use App\Enums\StatusMeja;
 use App\Enums\UserRole;
 use App\Http\Controllers\Admin\ChartDataController;
 use App\Http\Controllers\Admin\RecapExportController;
 use App\Http\Controllers\Admin\SalesReportController;
 use App\Http\Controllers\Kasir\DashboardController;
-use App\Http\Controllers\MejaScanController;
 use App\Http\Controllers\MidtransWebhookController;
+use App\Http\Controllers\TableAssignmentController;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\Recaps;
 use App\Livewire\Customer\Checkout;
 use App\Livewire\Customer\QrisPayment;
 use App\Livewire\OrderStatus;
 use App\Models\Meja;
+use App\Models\Pesanan;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -36,26 +36,24 @@ Route::view('profile', 'profile')
     ->name('profile');
 
 Route::get('/menu', function () {
-    $meja = Meja::where('status', StatusMeja::Aktif)->where('is_occupied', false)->where('nomor', '5')->first();
-    if (! $meja) {
-        $meja = Meja::where('status', StatusMeja::Aktif)->where('is_occupied', false)->first();
-    }
-    if (! $meja) {
-        $meja = Meja::where('status', StatusMeja::Aktif)->first();
-    }
-    if (! $meja) {
-        $meja = Meja::factory()->create(['nomor' => '5', 'status' => StatusMeja::Aktif]);
+    $mejaId = session('assigned_meja_id');
+    $meja = $mejaId ? Meja::find($mejaId) : null;
+
+    if ($meja && session('assigned_meja_token') === $meja->token) {
+        return view('customer.menu', compact('meja'));
     }
 
-    return view('customer.menu', compact('meja'));
+    return redirect()->route('customer.scan-required');
 });
 
 Route::get('/menu/{meja}', function (Meja $meja) {
     return view('customer.menu', compact('meja'));
 })->name('customer.menu');
 
-Route::get('/scan/{meja}', [MejaScanController::class, 'show'])
-    ->name('meja.scan');
+Route::get('/meja/{token}', [TableAssignmentController::class, 'assign'])
+    ->name('meja.assign');
+
+Route::view('/scan-required', 'customer.scan-required')->name('customer.scan-required');
 
 Route::get('/menu/{meja}/checkout', Checkout::class)->name('customer.checkout');
 
@@ -76,6 +74,9 @@ Route::middleware(['auth', 'kasir'])->prefix('kasir')->name('kasir.')->group(fun
     Route::view('/history', 'kasir.history')->name('history');
     Route::view('/manual-order', 'kasir.manual-order')->name('manual-order');
     Route::get('/meja-qr', fn () => view('kasir.meja-qr'))->name('meja-qr');
+    Route::get('/order/{pesanan}/ticket', fn (Pesanan $pesanan) => view('kitchen.ticket', [
+        'pesanan' => $pesanan->load('details.menu', 'meja'),
+    ]))->name('ticket');
 });
 
 require __DIR__.'/auth.php';

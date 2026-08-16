@@ -5,7 +5,7 @@
         </div>
         <h2 class="font-display font-semibold text-lg text-arang dark:text-kertas mb-2">Silakan Scan Ulang QR Meja</h2>
         <p class="text-sm text-muted-dark dark:text-muted-light mb-6 max-w-xs">Sesi meja ini sudah berakhir. Scan QR code di meja untuk mulai memesan kembali.</p>
-        <a href="{{ route('meja.scan', $meja->id) }}" class="px-6 py-3 bg-accent hover:bg-accent-dark text-ink font-semibold text-sm rounded-xl transition-colors">Scan Ulang</a>
+        <a href="{{ route('meja.assign', $meja->token) }}" class="px-6 py-3 bg-accent hover:bg-accent-dark text-ink font-semibold text-sm rounded-xl transition-colors">Scan Ulang</a>
     </div>
 @else
 <div class="pb-32" wire:on.window="refreshStock" wire:poll.15s="refreshStock" x-data="{
@@ -156,13 +156,38 @@
                                             </div>
 
                                              @if($item['is_available'] ?? false)
+                                                 @if(!empty($item['options']))
+                                                     <div class="mt-2 flex flex-wrap gap-2">
+                                                         @foreach($item['options'] as $opt)
+                                                             <label class="inline-flex items-center gap-1.5 text-xs font-medium text-arang dark:text-kertas cursor-pointer">
+                                                                 <input
+                                                                     type="radio"
+                                                                     wire:model="selectedOptions.{{ $item['id'] }}"
+                                                                     value="{{ $opt }}"
+                                                                     {{ ($selectedOptions[$item['id']] ?? $item['options'][0]) === $opt ? 'checked' : '' }}
+                                                                     class="w-3.5 h-3.5 accent-accent"
+                                                                 >
+                                                                 {{ ucfirst($opt) }}
+                                                             </label>
+                                                         @endforeach
+                                                     </div>
+                                                 @endif
+
                                                  @php
-                                                     $cartItem = collect($cart)->firstWhere('menu_id', $item['id']);
+                                                     $cartLine = null;
+                                                     $cartKey = null;
+                                                     foreach ($cart as $k => $c) {
+                                                         if (($c['menu_id'] ?? null) == $item['id']) {
+                                                             $cartLine = $c;
+                                                             $cartKey = $k;
+                                                             break;
+                                                         }
+                                                     }
                                                  @endphp
-                                                 @if($cartItem)
+                                                 @if($cartLine)
                                                      <div class="flex items-center gap-2">
                                                          <button
-                                                             wire:click="decrementQuantity({{ $item['id'] }})"
+                                                             wire:click="decrementQuantity('{{ $cartKey }}')"
                                                              wire:loading.attr="disabled"
                                                              class="w-9 h-9 rounded-xl bg-paper dark:bg-ink border border-border-light dark:border-border-dark text-arang dark:text-kertas flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                                                              aria-label="Kurangi {{ $item['nama'] }}"
@@ -170,7 +195,7 @@
                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                                          </button>
                                                          <span class="w-6 text-center font-mono font-bold text-sm text-arang dark:text-kertas">
-                                                             {{ $cartItem['jumlah'] }}
+                                                             {{ $cartLine['jumlah'] }}
                                                          </span>
                                                          <button
                                                              wire:click="addToCart({{ $item['id'] }})"
@@ -210,6 +235,13 @@
                     </div>
                 @endif
             @endforeach
+        @endif
+
+        @if($hasMoreMenus)
+            <div wire:intersect="loadMoreMenus" class="flex items-center justify-center py-8 text-muted-dark dark:text-muted-light">
+                <svg class="animate-spin w-5 h-5 {{ $loadingMore ? '' : 'opacity-0' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <span class="ml-2 text-xs">Memuat menu lainnya…</span>
+            </div>
         @endif
     </div>
 

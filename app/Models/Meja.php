@@ -37,7 +37,11 @@ class Meja extends Model
 
         static::updated(function (Meja $meja) {
             if ($meja->wasChanged(['is_occupied', 'status', 'token'])) {
-                event(new TableStatusUpdated($meja->fresh()));
+                try {
+                    event(new TableStatusUpdated($meja->fresh()));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
             }
         });
     }

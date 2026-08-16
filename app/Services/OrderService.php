@@ -19,12 +19,16 @@ class OrderService
     /**
      * Checkout: create order + details + transaction, reduce stock, broadcast.
      *
-     * @param  array<int, array{menu_id: int, jumlah: int, harga_satuan: int}>  $items
+     * @param  array<int, array{menu_id: int, jumlah: int, harga_satuan: int, selected_option?: ?string}>  $items
      */
     public function checkout(Meja $meja, array $items, MetodeBayar $metodeBayar = MetodeBayar::Tunai, ?string $catatan = null, ?int $kasirId = null, ?string $tableToken = null): Pesanan
     {
-        if ($kasirId === null && ($tableToken === null || $tableToken !== $meja->token || ! $meja->is_occupied)) {
+        if ($kasirId === null && ($tableToken === null || $tableToken !== $meja->token)) {
             throw new \DomainException('Sesi meja telah berakhir. Silakan scan ulang QR meja.');
+        }
+
+        if (! $meja->is_occupied) {
+            $meja->update(['is_occupied' => true]);
         }
 
         $pesanan = DB::transaction(function () use ($meja, $items, $metodeBayar, $catatan, $kasirId) {
@@ -53,10 +57,15 @@ class OrderService
                     'jumlah' => $item['jumlah'],
                     'harga_satuan' => $menu->harga,
                     'subtotal' => $subtotal,
+                    'selected_option' => $item['selected_option'] ?? null,
                 ]);
 
                 $menu->reduceStock($item['jumlah']);
-                event(new StockUpdated($menu->id, $menu->fresh()->stok, $menu->fresh()->status->value));
+                try {
+                    event(new StockUpdated($menu->id, $menu->fresh()->stok, $menu->fresh()->status->value));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
                 $totalHarga += $subtotal;
             }
 

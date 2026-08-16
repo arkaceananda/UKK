@@ -11,7 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::table('menu', function (Blueprint $table) {
+            $table->json('options')->nullable()->after('harga');
+        });
+
+        Schema::table('detail_pesanan', function (Blueprint $table) {
+            $table->string('selected_option')->nullable()->after('menu_id');
+        });
+
+        Schema::table('pesanan', function (Blueprint $table) {
+            $table->text('notes')->nullable()->after('status'); // Adjust 'after' based on your schema
+        });
     }
 
     /**
@@ -19,6 +29,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('menu', function (Blueprint $table) {
+            $table->dropColumn('options');
+        });
+
+        Schema::table('detail_pesanan', function (Blueprint $table) {
+            $table->dropColumn('selected_option');
+        });
+
+        Schema::table('pesanan', function (Blueprint $table) {
+            $table->dropColumn('notes');
+        });
     }
 };

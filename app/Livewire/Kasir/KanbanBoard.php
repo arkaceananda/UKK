@@ -62,7 +62,7 @@ class KanbanBoard extends Component
 
         try {
             $order->transitionTo(StatusPesanan::Diterima);
-            event(new OrderStatusUpdated($order->fresh()));
+            $this->broadcastStatus($order->fresh());
             $this->loadOrders();
         } catch (\DomainException $e) {
             $this->dispatch('error', message: $e->getMessage());
@@ -88,11 +88,9 @@ class KanbanBoard extends Component
                 if ($order->transaksi) {
                     $order->transaksi->update(['status_bayar' => StatusBayar::Pending]);
                 }
-
-                $order->meja->update(['is_occupied' => false]);
             });
 
-            event(new OrderStatusUpdated($order->fresh()));
+            $this->broadcastStatus($order->fresh());
             $this->loadOrders();
         } catch (\DomainException $e) {
             $this->dispatch('error', message: $e->getMessage());
@@ -105,7 +103,7 @@ class KanbanBoard extends Component
 
         try {
             $order->transitionTo(StatusPesanan::Diproses);
-            event(new OrderStatusUpdated($order->fresh()));
+            $this->broadcastStatus($order->fresh());
             $this->loadOrders();
         } catch (\DomainException $e) {
             $this->dispatch('error', message: $e->getMessage());
@@ -119,9 +117,8 @@ class KanbanBoard extends Component
         try {
             DB::transaction(function () use ($order) {
                 $order->transitionTo(StatusPesanan::Selesai);
-                $order->meja->update(['is_occupied' => false]);
             });
-            event(new OrderStatusUpdated($order->fresh()));
+            $this->broadcastStatus($order->fresh());
             $this->loadOrders();
         } catch (\DomainException $e) {
             $this->dispatch('error', message: $e->getMessage());
@@ -133,6 +130,15 @@ class KanbanBoard extends Component
     {
         $this->loadOrders();
         gc_collect_cycles();
+    }
+
+    protected function broadcastStatus(Pesanan $order): void
+    {
+        try {
+            event(new OrderStatusUpdated($order));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function render()

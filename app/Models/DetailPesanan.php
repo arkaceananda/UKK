@@ -16,7 +16,7 @@ class DetailPesanan extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['pesanan_id', 'menu_id', 'jumlah', 'harga_satuan', 'subtotal'];
+    protected $fillable = ['pesanan_id', 'menu_id', 'jumlah', 'harga_satuan', 'subtotal', 'selected_option'];
 
     protected function casts(): array
     {
