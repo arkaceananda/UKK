@@ -47,11 +47,19 @@ Route::get('/menu', function () {
 });
 
 Route::get('/menu/{meja}', function (Meja $meja) {
+    if (session('assigned_meja_id') !== $meja->id
+        || session('assigned_meja_token') !== $meja->token) {
+        return redirect()->route('customer.scan-required');
+    }
+
     return view('customer.menu', compact('meja'));
 })->name('customer.menu');
 
 Route::get('/meja/{token}', [TableAssignmentController::class, 'assign'])
     ->name('meja.assign');
+
+Route::get('/meja/{token}/qr', [TableAssignmentController::class, 'qr'])
+    ->name('meja.qr');
 
 Route::view('/scan-required', 'customer.scan-required')->name('customer.scan-required');
 
@@ -84,7 +92,7 @@ require __DIR__.'/auth.php';
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', Dashboard::class)->name('dashboard');
     Route::get('/recaps', Recaps::class)->name('recaps');
-    Route::get('/recaps/export/{recap}', [RecapExportController::class, 'exportCsv'])->name('recaps.export');
+    Route::get('/recaps/export', [RecapExportController::class, 'exportPdf'])->name('recaps.export');
     Route::get('/api/chart/sales', [ChartDataController::class, 'sales'])->name('api.chart.sales');
     Route::get('/api/chart/top-menu', [ChartDataController::class, 'topMenu'])->name('api.chart.top-menu');
     Route::get('/sales/export/{filter?}', [SalesReportController::class, 'exportSales'])->name('sales.export');

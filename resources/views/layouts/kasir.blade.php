@@ -21,7 +21,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-body antialiased bg-paper dark:bg-ink text-arang dark:text-kertas transition-colors duration-200">
-        <div class="flex h-screen overflow-hidden">
+        <div class="flex h-screen overflow-hidden" x-data="{ confirmLogout: false }">
             <aside class="w-64 bg-paper-card dark:bg-surface border-r border-border-light dark:border-border-dark flex flex-col">
                 <div class="p-6 border-b border-border-light dark:border-border-dark">
                     <h1 class="text-xl font-display font-bold text-arang dark:text-paper">BurjoOrder</h1>
@@ -44,12 +44,13 @@
                 </nav>
 
                 <div class="p-4 border-t border-border-light dark:border-border-dark">
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="w-full px-4 py-3 text-left rounded-lg text-cabai hover:bg-kertas dark:hover:bg-arang transition-colors">
-                            Logout
-                        </button>
-                    </form>
+                    <button
+                        type="button"
+                        @click="confirmLogout = true"
+                        class="w-full px-4 py-3 text-left rounded-lg text-cabai hover:bg-kertas dark:hover:bg-arang transition-colors"
+                    >
+                        Logout
+                    </button>
                 </div>
             </aside>
 
@@ -91,7 +92,6 @@
                     {{ $slot }}
                 </main>
             </div>
-        </div>
 
         <script>
             const themeToggleBtn = document.getElementById('theme-toggle');
@@ -185,5 +185,35 @@
             window.addEventListener('error', e => showToast(e.detail.message || e.detail, 'error'));
             window.addEventListener('notify', e => showToast(e.detail.message || e.detail, e.detail.type || 'info'));
         </script>
+
+        {{-- MODAL: KONFIRMASI LOGOUT --}}
+        <div
+            x-show="confirmLogout"
+            x-transition.opacity
+            @keydown.escape.window="confirmLogout = false"
+            class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            style="display: none;"
+        >
+            <div @click.outside="confirmLogout = false" class="bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark rounded-2xl max-w-sm w-full p-6 space-y-5 shadow-2xl">
+                <div class="flex items-start gap-4">
+                    <div class="w-11 h-11 rounded-full bg-cabai/10 flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-cabai" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a2 2 0 012-2h4a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-display font-bold text-arang dark:text-paper">Keluar dari Akun?</h3>
+                        <p class="text-xs text-muted-dark dark:text-muted-light mt-1">Sesi kamu akan diakhiri dan kamu harus login kembali untuk mengakses dashboard.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2 border-t border-border-light dark:border-border-dark">
+                    <button type="button" @click="confirmLogout = false" class="px-4 py-2 text-sm font-medium text-muted-dark hover:text-ink dark:text-muted-light rounded-lg transition-colors">Batal</button>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="px-5 py-2 bg-cabai hover:bg-opacity-90 text-white rounded-xl font-medium text-sm transition-colors">Ya, Keluar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        </div>
     </body>
 </html>

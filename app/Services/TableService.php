@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Enums\StatusMeja;
 use App\Enums\StatusPesanan;
+use App\Enums\StatusSesiMeja;
 use App\Models\Meja;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use Illuminate\Support\Str;
 
 class TableService
@@ -21,6 +23,8 @@ class TableService
 
     public function regenerateToken(Meja $meja): string
     {
+        app(QrCodeService::class)->forget($meja->token);
+
         return $meja->generateNewToken();
     }
 
@@ -47,6 +51,15 @@ class TableService
                 StatusPesanan::Diproses,
             ])
             ->exists();
+
+        if (! $hasActive) {
+            SesiMeja::where('meja_id', $meja->id)
+                ->where('status', StatusSesiMeja::Aktif)
+                ->update([
+                    'status' => StatusSesiMeja::Selesai,
+                    'ended_at' => now(),
+                ]);
+        }
 
         $this->setOccupied($meja, $hasActive);
     }

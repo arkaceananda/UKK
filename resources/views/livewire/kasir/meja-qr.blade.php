@@ -14,8 +14,12 @@
                 @endif
             </div>
 
+            @if($meja['is_occupied'] && $meja['sesi_started_at'])
+                <div class="text-[11px] text-muted-dark">Sesi aktif sejak {{ $meja['sesi_started_at'] }}</div>
+            @endif
+
             <div class="flex justify-center mb-3">
-                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(120)->generate(route('meja.assign', $meja['token'])) !!}
+                <img src="{{ route('meja.qr', $meja['token']) }}" alt="QR Meja {{ $meja['nomor'] }}" width="120" height="120" loading="lazy" class="rounded">
             </div>
 
             <div class="text-xs text-muted-dark break-all mb-2">

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatusMeja;
+use App\Enums\StatusSesiMeja;
 use App\Events\TableStatusUpdated;
 use Database\Factories\MejaFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,6 +50,16 @@ class Meja extends Model
     public function pesanan(): HasMany
     {
         return $this->hasMany(Pesanan::class);
+    }
+
+    public function sesiMeja(): HasMany
+    {
+        return $this->hasMany(SesiMeja::class);
+    }
+
+    public function sesiAktif()
+    {
+        return $this->sesiMeja()->where('status', StatusSesiMeja::Aktif);
     }
 
     public function generateNewToken(): string

@@ -17,7 +17,7 @@ class Pesanan extends Model
 
     protected $table = 'pesanan';
 
-    protected $fillable = ['meja_id', 'kasir_id', 'status', 'catatan', 'total_harga'];
+    protected $fillable = ['meja_id', 'kasir_id', 'status', 'catatan', 'total_harga', 'sesi_meja_id'];
 
     protected function casts(): array
     {
@@ -45,6 +45,11 @@ class Pesanan extends Model
     public function transaksi(): HasOne
     {
         return $this->hasOne(Transaksi::class);
+    }
+
+    public function sesiMeja(): BelongsTo
+    {
+        return $this->belongsTo(SesiMeja::class);
     }
 
     public function transitionTo(StatusPesanan $nextStatus): void

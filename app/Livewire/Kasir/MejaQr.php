@@ -21,6 +21,7 @@ class MejaQr extends Component
     public function loadMejas(): void
     {
         $this->mejas = Meja::query()
+            ->with('sesiAktif')
             ->where('status', StatusMeja::Aktif)
             ->orderByRaw('CAST(nomor AS INTEGER)')
             ->get()
@@ -29,6 +30,7 @@ class MejaQr extends Component
                 'nomor' => $meja->nomor,
                 'token' => $meja->token,
                 'is_occupied' => (bool) $meja->is_occupied,
+                'sesi_started_at' => $meja->sesiAktif->first()?->started_at?->format('H:i'),
             ])
             ->values()
             ->all();

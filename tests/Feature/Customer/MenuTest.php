@@ -96,8 +96,7 @@ class MenuTest extends TestCase
 
         $response = $this->get(route('customer.menu', ['meja' => $meja->id]));
 
-        $response->assertStatus(200);
-        $response->assertSee('Silakan Scan Ulang QR Meja');
+        $response->assertRedirect(route('customer.scan-required'));
     }
 
     public function test_menu_renders_when_table_session_is_valid(): void

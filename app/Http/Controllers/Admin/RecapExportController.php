@@ -1,28 +1,30 @@
 <?php
 
-namespace App\Livewire\Admin;
+namespace App\Http\Controllers\Admin;
 
 use App\Models\Recap;
-use Livewire\Component;
-use Livewire\WithPagination;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Response;
 
-class Recaps extends Component
+class RecapExportController
 {
-    use WithPagination;
-
-    public function render()
+    public function exportPdf(): Response
     {
         $recaps = Recap::where('type', 'daily')
             ->orderByDesc('period_start')
-            ->paginate(15);
+            ->get();
 
         $totals = Recap::where('type', 'daily')
             ->selectRaw('COALESCE(SUM(total_revenue), 0) as total_revenue, COALESCE(SUM(total_orders), 0) as total_orders, COALESCE(SUM(total_items_sold), 0) as total_items_sold')
             ->first();
 
-        return view('livewire.admin.recaps', [
+        $pdf = Pdf::loadView('admin.recap-pdf', [
             'recaps' => $recaps,
             'totals' => $totals,
-        ])->layout('layouts.admin', ['title' => 'Recap']);
+        ]);
+
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->download('recap-harian.pdf');
     }
 }
