@@ -24,6 +24,31 @@ services:
         depends_on:
             - pgsql
             - redis
+    frankenphp:
+        build:
+            context: './docker/frankenphp'
+            dockerfile: Dockerfile
+        image: 'sail-frankenphp/app'
+        ports:
+            - '${FRANKENPHP_PORT:-8081}:80'
+            - '${FORWARD_FRANKENPHP_HTTPS_PORT:-443}:443'
+            - '${FORWARD_FRANKENPHP_HTTPS_PORT:-443}:443/udp'
+        volumes:
+            - '.:/app'
+            - './docker/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+    cloudflared:
+        image: 'cloudflare/cloudflared:latest'
+        command: 'tunnel --no-autoupdate --url http://frankenphp:80'
+        networks:
+            - sail
+        depends_on:
+            - frankenphp
+        restart: unless-stopped
     pgsql:
         image: 'postgres:18-alpine'
         ports:
