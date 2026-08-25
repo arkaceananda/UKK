@@ -23,7 +23,7 @@
     @livewireStyles
 </head>
 <body class="font-body antialiased bg-paper dark:bg-ink text-arang dark:text-kertas transition-colors duration-200">
-    <div class="flex h-screen overflow-hidden" x-data="{ sidebarOpen: false }">
+    <div class="flex h-screen overflow-hidden" x-data="{ sidebarOpen: false, confirmLogout: false }">
         {{-- Mobile Overlay --}}
         <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity class="fixed inset-y-0 left-0 w-full bg-black/50 z-40 md:hidden"></div>
 
@@ -47,10 +47,6 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ Route::has('admin.recaps') ? route('admin.recaps') : '#' }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang transition-colors font-medium">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>Recap</span>
-                </a>
                 <a href="{{ route('admin.dashboard') }}#menu-manager" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang transition-colors font-medium">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     <span>Manajemen Menu</span>
@@ -59,16 +55,21 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                     <span>Manajemen Meja</span>
                 </a>
+                <a href="{{ Route::has('admin.recaps') ? route('admin.recaps') : '#' }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-arang dark:text-kertas hover:bg-kertas dark:hover:bg-arang transition-colors font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>Recap</span>
+                </a>
             </nav>
 
             <div class="p-4 border-t border-border-light dark:border-border-dark">
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-cabai hover:bg-kertas dark:hover:bg-arang transition-colors text-left font-medium">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        <span>Logout</span>
-                    </button>
-                </form>
+                <button
+                    type="button"
+                    @click="confirmLogout = true"
+                    class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-cabai hover:bg-kertas dark:hover:bg-arang transition-colors text-left font-medium"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a2 2 0 012-2h4a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
 
@@ -120,6 +121,35 @@
                 {{ $slot }}
             </main>
         </div>
+
+    {{-- MODAL: KONFIRMASI LOGOUT --}}
+    <div
+        x-show="confirmLogout"
+        x-transition.opacity
+        @keydown.escape.window="confirmLogout = false"
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        style="display: none;"
+    >
+        <div @click.outside="confirmLogout = false" class="bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark rounded-2xl max-w-sm w-full p-6 space-y-5 shadow-2xl">
+            <div class="flex items-start gap-4">
+                <div class="w-11 h-11 rounded-full bg-cabai/10 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 text-cabai" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a2 2 0 012-2h4a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-display font-bold text-arang dark:text-paper">Keluar dari Akun?</h3>
+                    <p class="text-xs text-muted-dark dark:text-muted-light mt-1">Sesi kamu akan diakhiri dan kamu harus login kembali untuk mengakses dashboard.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2 border-t border-border-light dark:border-border-dark">
+                <button type="button" @click="confirmLogout = false" class="px-4 py-2 text-sm font-medium text-muted-dark hover:text-ink dark:text-muted-light rounded-lg transition-colors">Batal</button>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-5 py-2 bg-cabai hover:bg-opacity-90 text-white rounded-xl font-medium text-sm transition-colors">Ya, Keluar</button>
+                </form>
+            </div>
+        </div>
+    </div>
     </div>
 
     <script>

@@ -5,11 +5,13 @@ namespace App\Services;
 use App\Enums\MetodeBayar;
 use App\Enums\StatusBayar;
 use App\Enums\StatusPesanan;
+use App\Enums\StatusSesiMeja;
 use App\Events\StockUpdated;
 use App\Models\DetailPesanan;
 use App\Models\Meja;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\SesiMeja;
 use App\Models\Transaksi;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -67,6 +69,18 @@ class OrderService
                     report($e);
                 }
                 $totalHarga += $subtotal;
+            }
+
+            $sesi = SesiMeja::where('meja_id', $meja->id)
+                ->where('status', StatusSesiMeja::Aktif)
+                ->latest('id')
+                ->first();
+
+            if ($sesi) {
+                if ($kasirId) {
+                    $sesi->update(['user_id' => $kasirId]);
+                }
+                $pesanan->update(['sesi_meja_id' => $sesi->id]);
             }
 
             $pesanan->update(['total_harga' => $totalHarga]);

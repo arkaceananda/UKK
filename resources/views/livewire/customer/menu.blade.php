@@ -238,7 +238,7 @@
         @endif
 
         @if($hasMoreMenus)
-            <div wire:intersect="loadMoreMenus" class="flex items-center justify-center py-8 text-muted-dark dark:text-muted-light">
+            <div x-data x-intersect.margin.-200px="$wire.loadMoreMenus()" class="flex items-center justify-center py-8 text-muted-dark dark:text-muted-light">
                 <svg class="animate-spin w-5 h-5 {{ $loadingMore ? '' : 'opacity-0' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 <span class="ml-2 text-xs">Memuat menu lainnya…</span>
             </div>

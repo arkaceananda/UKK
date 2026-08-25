@@ -3,7 +3,8 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManagerStatic as Image;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class ImageCacheService
 {
@@ -19,8 +20,9 @@ class ImageCacheService
         if (! Storage::disk('public')->exists($optimizedPath)) {
             try {
                 Storage::disk('public')->makeDirectory($this->cachePath);
-                Image::make($fullOriginalPath)
-                    ->encode('webp', 80)
+                (new ImageManager(new Driver))
+                    ->read($fullOriginalPath)
+                    ->toWebP(80)
                     ->save($fullOptimizedPath);
             } catch (\Exception $e) {
                 // Log the error if optimization fails, return original path
