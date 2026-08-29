@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Enums\StatusMenu;
 use App\Models\KategoriMenu;
 use App\Models\Menu;
+use App\Services\ImageCacheService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -111,6 +112,8 @@ class MenuManager extends Component
             'options' => $this->enableOptions ? ['panas', 'dingin'] : null,
         ];
 
+        $oldFoto = $this->editingMenuId ? (Menu::find($this->editingMenuId)?->foto) : null;
+
         if ($this->fotoMenuCropped && str_starts_with($this->fotoMenuCropped, 'data:image')) {
             $imageData = base64_decode(substr($this->fotoMenuCropped, strpos($this->fotoMenuCropped, ',') + 1), true);
 
@@ -119,13 +122,16 @@ class MenuManager extends Component
                 $path = 'menu-photos/'.$filename;
                 Storage::disk('public')->put($path, $imageData);
                 $data['foto'] = $path;
+
+                if ($oldFoto && $oldFoto !== $path) {
+                    Storage::disk('public')->delete($oldFoto);
+                    app(ImageCacheService::class)->invalidateImageCache($oldFoto);
+                }
             }
         } elseif ($this->removeFoto) {
-            if ($this->editingMenuId) {
-                $existing = Menu::find($this->editingMenuId);
-                if ($existing?->foto) {
-                    Storage::disk('public')->delete($existing->foto);
-                }
+            if ($oldFoto) {
+                Storage::disk('public')->delete($oldFoto);
+                app(ImageCacheService::class)->invalidateImageCache($oldFoto);
             }
             $data['foto'] = null;
         }
@@ -146,7 +152,13 @@ class MenuManager extends Component
 
     public function deleteMenu(int $menuId): void
     {
-        Menu::findOrFail($menuId)->delete();
+        $menu = Menu::findOrFail($menuId);
+
+        if ($menu->foto) {
+            app(ImageCacheService::class)->invalidateImageCache($menu->foto);
+        }
+
+        $menu->delete();
         $this->dispatch('notify', message: 'Menu berhasil dihapus.', type: 'info');
         $this->dispatch('menuUpdated');
         $this->resetMenus();

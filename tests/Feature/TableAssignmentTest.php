@@ -21,7 +21,7 @@ class TableAssignmentTest extends TestCase
 
         $this->assertSame($meja->id, session('assigned_meja_id'));
         $this->assertSame($meja->fresh()->token, session('assigned_meja_token'));
-        $this->assertFalse($meja->fresh()->is_occupied);
+        $this->assertTrue($meja->fresh()->is_occupied);
     }
 
     public function test_assign_refreshes_session_token_for_occupied_table(): void

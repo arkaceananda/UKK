@@ -21,6 +21,7 @@ class OrderPlaced implements ShouldBroadcast
     {
         return [
             new Channel('kasir-channel'),
+            new Channel('kitchen'),
         ];
     }
 

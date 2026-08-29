@@ -4,6 +4,9 @@ namespace App\Livewire;
 
 use App\Enums\StatusPesanan;
 use App\Models\Pesanan;
+use App\Services\TableService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -71,6 +74,56 @@ class OrderStatus extends Component
                 'subtitle' => '',
             ],
         };
+    }
+
+    #[Computed]
+    public function isOwnOrder(): bool
+    {
+        $mejaId = session('assigned_meja_id');
+        $token = session('assigned_meja_token');
+
+        return $mejaId === $this->pesanan->meja_id
+            && $token !== null
+            && $token === $this->pesanan->meja->token;
+    }
+
+    #[Computed]
+    public function canCancel(): bool
+    {
+        return $this->pesanan->status === StatusPesanan::Menunggu && $this->isOwnOrder;
+    }
+
+    public function cancelOrder(): void
+    {
+        if (! $this->canCancel) {
+            $this->dispatch('notify', message: 'Pesanan tidak dapat dibatalkan.', type: 'error');
+
+            return;
+        }
+
+        $pesanan = $this->pesanan;
+
+        DB::transaction(function () use ($pesanan) {
+            foreach ($pesanan->details as $detail) {
+                $menu = $detail->menu;
+
+                if ($menu) {
+                    $menu->increaseStock($detail->jumlah);
+                }
+
+                $detail->delete();
+            }
+
+            $pesanan->transaksi()?->delete();
+            $pesanan->delete();
+        });
+
+        app(TableService::class)->refreshOccupancy($pesanan->meja);
+
+        Cache::flush();
+
+        $this->dispatch('notify', message: 'Pesanan berhasil dibatalkan.', type: 'success');
+        $this->redirect(route('customer.menu', ['meja' => $pesanan->meja_id]));
     }
 
     public function render()

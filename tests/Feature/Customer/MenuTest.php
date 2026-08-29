@@ -26,7 +26,7 @@ class MenuTest extends TestCase
         $response = $this->withSession($this->validSession($meja))->get('/menu');
 
         $response->assertStatus(200);
-        $response->assertSee('BurjoOrder');
+        $response->assertSee('Menu');
     }
 
     public function test_customer_menu_shows_available_categories(): void

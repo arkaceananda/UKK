@@ -19,7 +19,10 @@ class MejaManager extends Component
 
     public string $statusMeja = 'Aktif';
 
-    protected $listeners = ['openCreateMejaModal' => 'openCreateMejaModal'];
+    protected $listeners = [
+        'openCreateMejaModal' => 'openCreateMejaModal',
+        'echo:kasir-channel,TableStatusUpdated' => 'refreshMeja',
+    ];
 
     public function openCreateMejaModal(): void
     {
@@ -88,6 +91,11 @@ class MejaManager extends Component
         $meja = Meja::findOrFail($mejaId);
         $meja->update(['is_occupied' => ! $meja->is_occupied]);
         $this->dispatch('notify', message: 'Status meja #'.$meja->nomor.' diubah.', type: 'success');
+    }
+
+    public function refreshMeja(): void
+    {
+        //
     }
 
     public function render()

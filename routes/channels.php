@@ -17,3 +17,11 @@ Broadcast::channel('order.{orderId}', function ($user, $orderId) {
 Broadcast::channel('stock-updates', function () {
     return true;
 });
+
+Broadcast::channel('kitchen', function () {
+    return true;
+});
+
+Broadcast::channel('admin.stats', function () {
+    return true;
+});

@@ -19,53 +19,12 @@ window.Echo.channel('stock-updates')
     });
 
 document.addEventListener('livewire:initialized', () => {
-    initLazyImages();
     initThemeSystem();
 });
 
 document.addEventListener('livewire:navigated', () => {
-    initLazyImages();
+    initThemeSystem();
 });
-
-function initLazyImages() {
-    if (! ('IntersectionObserver' in window)) {
-        document.querySelectorAll('img[data-src]').forEach((img) => {
-            img.src = img.dataset.src;
-            img.classList.add('loaded');
-            img.removeAttribute('data-src');
-        });
-
-        return;
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                img.src = img.dataset.src;
-
-                img.onload = () => {
-                    img.classList.add('loaded');
-                };
-
-                img.onerror = () => {
-                    img.classList.add('error');
-                    img.style.background = '#1E2229';
-                };
-
-                img.removeAttribute('data-src');
-                observer.unobserve(img);
-            }
-        });
-    }, {
-        rootMargin: '300px',
-        threshold: 0.01,
-    });
-
-    document.querySelectorAll('img[data-src]').forEach((img) => {
-        observer.observe(img);
-    });
-}
 
 function initThemeSystem() {
     const theme = localStorage.getItem('theme') || 'system';
