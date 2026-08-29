@@ -1,3 +1,4 @@
+<div>
 @if (! $verified)
     <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
         <div class="w-16 h-16 rounded-2xl bg-kertas dark:bg-surface border border-border-light dark:border-border-dark flex items-center justify-center mb-4">
@@ -8,7 +9,7 @@
         <a href="{{ route('meja.assign', $mejaToken) }}" class="px-6 py-3 bg-accent hover:bg-accent-dark text-ink font-semibold text-sm rounded-xl transition-colors">Scan Ulang</a>
     </div>
 @else
-<div class="pb-32" wire:on.window="refreshStock" wire:poll.15s="refreshStock">
+<div class="pb-32">
 
     {{-- HEADER --}}
     <div class="px-4 pt-4 pb-3">
@@ -28,7 +29,16 @@
         <div class="bg-paper-card dark:bg-surface rounded-2xl border border-border-light dark:border-border-dark p-4 space-y-4">
             <div class="flex items-center justify-between">
                 <h2 class="font-display font-semibold text-arang dark:text-kertas">Ringkasan Pesanan</h2>
-                <span class="text-accent text-sm font-medium">{{ count($cart) }} Menu Terpilih</span>
+                <div class="flex items-center gap-3">
+                    @if(count($cart) > 0)
+                        <button
+                            wire:click="clearCart"
+                            wire:confirm="Kosongkan seluruh keranjang?"
+                            class="text-cabai text-xs font-medium hover:underline"
+                        >Kosongkan</button>
+                    @endif
+                    <span class="text-accent text-sm font-medium">{{ count($cart) }} Menu Terpilih</span>
+                </div>
             </div>
 
             @if(count($cart) > 0)
@@ -36,7 +46,7 @@
                     @foreach($cart as $key => $item)
                         <div class="relative flex gap-3 bg-paper dark:bg-ink rounded-xl p-3">
                             <button
-                                wire:click="removeItem('{{ $key }}')"
+                                wire:click="removeFromCart('{{ $key }}')"
                                 class="absolute top-2 right-2 text-muted-dark dark:text-muted-light hover:text-cabai transition-colors"
                                 aria-label="Hapus {{ $item['nama'] }}"
                             >
@@ -44,8 +54,8 @@
                             </button>
 
                             <div class="w-12 h-12 shrink-0 rounded-lg bg-black/5 dark:bg-surface-alt overflow-hidden flex items-center justify-center">
-                                @if($item['foto'])
-                                    <img src="{{ asset('storage/' . $item['foto']) }}" alt="{{ $item['nama'] }}" class="w-full h-full object-cover" />
+                                @if(!empty($item['foto']))
+                                    <img src="{{ app(\App\Services\ImageCacheService::class)->url($item['foto']) }}" alt="{{ $item['nama'] }}" class="w-full h-full object-cover" />
                                 @else
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-dark dark:text-muted-light"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                                 @endif
@@ -151,3 +161,4 @@
     </div>
 </div>
 @endif
+</div>

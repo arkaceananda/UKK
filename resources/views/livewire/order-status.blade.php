@@ -1,7 +1,7 @@
 <div class="space-y-5 pb-24">
     {{-- HEADER --}}
     <div class="flex items-center justify-between">
-        <a href="{{ route('customer.menu', ['meja' => $pesanan->meja->id]) }}" wire:navigate class="text-arang dark:text-kertas">
+        <a href="{{ route('customer.menu', ['meja' => $pesanan->meja->id]) }}" class="text-arang dark:text-kertas">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </a>
         <span class="shrink-0 px-4 py-1.5 rounded-full bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark text-sm text-arang dark:text-kertas font-medium">
@@ -107,6 +107,41 @@
         </div>
     </div>
 
+    @if($this->canCancel)
+        <div x-data="{ confirm: false }" class="px-1">
+            <template x-if="!confirm">
+                <button
+                    type="button"
+                    @click="confirm = true"
+                    class="w-full py-3 rounded-xl border border-cabai/40 text-cabai font-semibold text-sm bg-transparent hover:bg-cabai/5 transition-colors"
+                >
+                    Batalkan Pesanan
+                </button>
+            </template>
+            <template x-if="confirm">
+                <div class="rounded-2xl border border-cabai/40 bg-cabai/5 p-4 space-y-3">
+                    <p class="text-sm text-arang dark:text-kertas font-medium">Yakin ingin membatalkan pesanan ini?</p>
+                    <div class="flex gap-2">
+                        <button
+                            type="button"
+                            @click="confirm = false"
+                            class="flex-1 py-2.5 rounded-xl border border-border-light dark:border-border-dark text-arang dark:text-kertas text-sm font-medium"
+                        >
+                            Tidak
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="cancelOrder"
+                            class="flex-1 py-2.5 rounded-xl bg-cabai hover:bg-cabai/90 text-white text-sm font-semibold"
+                        >
+                            Ya, Batalkan
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    @endif
+
     @unless($isSelesai)
         <p class="flex items-center justify-center gap-1.5 text-xs text-muted-dark dark:text-muted-light">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
@@ -115,7 +150,6 @@
     @else
         <a
             href="{{ route('customer.menu', ['meja' => $pesanan->meja->id]) }}"
-            wire:navigate
             class="block text-center w-full py-3 rounded-xl bg-accent hover:bg-accent-dark text-ink font-semibold text-sm"
         >
             Pesan Lagi

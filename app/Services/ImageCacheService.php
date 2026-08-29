@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Format;
 use Intervention\Image\ImageManager;
 
 class ImageCacheService
@@ -21,10 +22,10 @@ class ImageCacheService
             try {
                 Storage::disk('public')->makeDirectory($this->cachePath);
                 (new ImageManager(new Driver))
-                    ->read($fullOriginalPath)
-                    ->toWebP(80)
+                    ->decodePath($fullOriginalPath)
+                    ->encodeUsingFormat(Format::WEBP, 80)
                     ->save($fullOptimizedPath);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Log the error if optimization fails, return original path
                 return $originalPath;
             }
@@ -38,6 +39,11 @@ class ImageCacheService
         $optimizedPath = $this->optimizeAndCache($path);
 
         return Storage::url($optimizedPath);
+    }
+
+    public function url(string $path): string
+    {
+        return $this->getCachedUrl($path);
     }
 
     public function invalidateImageCache(string $path)

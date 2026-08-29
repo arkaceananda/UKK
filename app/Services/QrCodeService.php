@@ -3,15 +3,18 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class QrCodeService
 {
     public function svgForToken(string $token, int $size = 120): string
     {
-        $key = "qr:meja:{$token}:{$size}";
+        $host = Request::getSchemeAndHttpHost() ?: (string) config('app.url');
+        $url = $host.route('meja.assign', $token, false);
+        $key = 'qr:meja:'.md5($url).":{$size}";
 
-        return Cache::rememberForever($key, fn (): string => (string) QrCode::size($size)->generate(route('meja.assign', $token)));
+        return Cache::remember($key, 600, fn (): string => (string) QrCode::size($size)->generate($url));
     }
 
     public function forget(string $token): void

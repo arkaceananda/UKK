@@ -62,6 +62,21 @@
 
                     <div class="flex items-center gap-4">
                         <button 
+                            id="sound-toggle-btn"
+                            type="button"
+                            @click="toggleSound()"
+                            :class="localStorage.getItem('kasir_sound_enabled') !== 'false' 
+                                ? 'bg-accent text-white' 
+                                : 'bg-paper-card dark:bg-surface text-arang dark:text-kertas'
+                            "
+                            class="p-2 rounded-lg hover:bg-kertas dark:hover:bg-arang transition-colors flex items-center justify-center"
+                            title="Toggle sound notifications"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1a1 1 0 011 1v3.586a1 1 0 01-.293.707l5.586 5.587a1 1 0 001.414 0l5.586-5.587a1 1 0 001.414-1.414l-5.586-5.587a1 1 0 00-1.414 0H10a1 1 0 01-1-1V4a1 1 0 011-1h1a1 1 0 011 1v3.586l5.586 5.586a1 1 0 001.414 0l5.586-5.586a1 1 0 001.414-1.414l-5.586-5.586a1 1 0 00-1.414 0z"></path>
+                            </svg>
+                        </button>
+                        <button 
                             id="theme-toggle"
                             type="button"
                             class="p-2 rounded-lg hover:bg-kertas dark:hover:bg-arang transition-colors"
@@ -181,9 +196,131 @@
                 }, 3000);
             }
 
-            window.addEventListener('success', e => showToast(e.detail.message || e.detail, 'success'));
-            window.addEventListener('error', e => showToast(e.detail.message || e.detail, 'error'));
-            window.addEventListener('notify', e => showToast(e.detail.message || e.detail, e.detail.type || 'info'));
+            // Sound Notification System
+            let audioCtx = null;
+            let soundEnabled = localStorage.getItem('kasir_sound_enabled') !== 'false';
+            
+            function initAudio() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+            
+            function playNotificationSound(type) {
+                if (!soundEnabled) return;
+                initAudio();
+                const ctx = audioCtx;
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                switch(type) {
+                    case 'new_order':
+                        // Double beep for new order
+                        oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.2);
+                        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        oscillator.start(ctx.currentTime);
+                        oscillator.stop(ctx.currentTime + 0.3);
+                        
+                        // Second beep
+                        setTimeout(() => {
+                            const osc2 = ctx.createOscillator();
+                            const gain2 = ctx.createGain();
+                            osc2.connect(gain2);
+                            gain2.connect(ctx.destination);
+                            osc2.frequency.setValueAtTime(800, ctx.currentTime);
+                            osc2.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.2);
+                            gain2.gain.setValueAtTime(0.3, ctx.currentTime);
+                            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                            osc2.start(ctx.currentTime);
+                            osc2.stop(ctx.currentTime + 0.3);
+                        }, 150);
+                        break;
+                        
+                    case 'order_ready':
+                        // Ascending tone for order ready
+                        oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+                        oscillator.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
+                        oscillator.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
+                        gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                        oscillator.start(ctx.currentTime);
+                        oscillator.stop(ctx.currentTime + 0.5);
+                        break;
+                        
+                    case 'payment':
+                        // Pleasant chime for payment
+                        oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+                        oscillator.frequency.setValueAtTime(800, ctx.currentTime + 0.1);
+                        oscillator.frequency.setValueAtTime(1000, ctx.currentTime + 0.2);
+                        gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                        oscillator.start(ctx.currentTime);
+                        oscillator.stop(ctx.currentTime + 0.4);
+                        break;
+                        
+                    default:
+                        // Simple beep
+                        oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+                        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        oscillator.start(ctx.currentTime);
+                        oscillator.stop(ctx.currentTime + 0.3);
+                }
+            }
+
+            // Initialize audio on first user interaction
+            document.addEventListener('click', initAudio, { once: true });
+            document.addEventListener('keydown', initAudio, { once: true });
+
+            window.addEventListener('success', e => {
+                showToast(e.detail.message || e.detail, 'success');
+                playNotificationSound(e.detail.type || 'default');
+            });
+            window.addEventListener('error', e => {
+                showToast(e.detail.message || e.detail, 'error');
+                playNotificationSound('default');
+            });
+            window.addEventListener('notify', e => {
+                showToast(e.detail.message || e.detail, e.detail.type || 'info');
+                playNotificationSound(e.detail.type === 'success' ? 'order_ready' : 'default');
+            });
+            
+            // Listen for Livewire events
+            document.addEventListener('livewire:load', () => {
+                Livewire.on('order-placed', (data) => {
+                    playNotificationSound('new_order');
+                });
+                Livewire.on('order-status-updated', (data) => {
+                    if (data?.status === 'Selesai') {
+                        playNotificationSound('order_ready');
+                    }
+                });
+            });
+            
+            // Toggle sound
+            window.toggleSound = function() {
+                soundEnabled = !soundEnabled;
+                localStorage.setItem('kasir_sound_enabled', soundEnabled);
+                const btn = document.getElementById('sound-toggle-btn');
+                if (btn) {
+                    btn.innerHTML = soundEnabled 
+                        ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1a1 1 0 011 1v3.586a1 1 0 01-.293.707l5.586 5.587a1 1 0 001.414 0l5.586-5.587a1 1 0 001.414-1.414l-5.586-5.587a1 1 0 00-1.414 0H10a1 1 0 01-1-1V4a1 1 0 011-1h1a1 1 0 011 1v3.586l5.586 5.586a1 1 0 001.414 0z"></path></svg>'
+                        : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1a1 1 0 011 1v3.586a1 1 0 01-.293.707l5.586 5.587a1 1 0 001.414 0l5.586-5.587a1 1 0 001.414-1.414l-5.586-5.587a1 1 0 00-1.414 0H10a1 1 0 01-1-1V4a1 1 0 011-1h1a1 1 0 011 1v3.586l5.586 5.586a1 1 0 001.414 0l5.586-5.586a1 1 0 001.414-1.414l-5.586-5.587a1 1 0 00-1.414 0H10a1 1 0 01-1-1V4a1 1 0 011-1h1a1 1 0 011 1v3.586a1 1 0 00-.293.707l-5.586 5.586a1 1 0 000 1.414z"></path></svg>';
+                    btn.classList.toggle('bg-accent', soundEnabled);
+                    btn.classList.toggle('text-white', soundEnabled);
+                    btn.classList.toggle('bg-paper-card', !soundEnabled);
+                    btn.classList.toggle('dark:bg-surface', !soundEnabled);
+                    btn.classList.toggle('text-arang', !soundEnabled);
+                    btn.classList.toggle('dark:text-kertas', !soundEnabled);
+                }
+            };
         </script>
 
         {{-- MODAL: KONFIRMASI LOGOUT --}}

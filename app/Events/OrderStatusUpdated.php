@@ -17,9 +17,12 @@ class OrderStatusUpdated implements ShouldBroadcast
         public readonly Pesanan $pesanan,
     ) {}
 
-    public function broadcastOn(): Channel
+    public function broadcastOn(): array
     {
-        return new Channel('order.'.$this->pesanan->id);
+        return [
+            new Channel('order.'.$this->pesanan->id),
+            new Channel('kitchen'),
+        ];
     }
 
     public function broadcastAs(): string

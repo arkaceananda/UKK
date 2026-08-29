@@ -55,4 +55,13 @@ class Menu extends Model
             $this->update(['status' => StatusMenu::Habis]);
         }
     }
+
+    public function increaseStock(int $jumlah): void
+    {
+        $this->increment('stok', $jumlah);
+
+        if ($this->status === StatusMenu::Habis && $this->fresh()->stok > 0) {
+            $this->update(['status' => StatusMenu::Tersedia]);
+        }
+    }
 }

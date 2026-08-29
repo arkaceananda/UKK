@@ -45,6 +45,8 @@ class TableAssignmentController extends Controller
             ]);
         }
 
+        (new TableService)->setOccupied($meja, true);
+
         return redirect()->route('customer.menu', ['meja' => $meja->id]);
     }
 }

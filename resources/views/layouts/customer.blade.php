@@ -60,21 +60,9 @@
         })();
     </script>
 </head>
-<body class="font-body text-arang bg-paper dark:text-kertas dark:bg-ink transition-colors duration-200 min-h-screen flex flex-col">
-    <div class="flex-1 flex flex-col mx-auto w-full max-w-lg lg:max-w-4xl">
-        <header class="bg-paper dark:bg-ink border-b border-border-light dark:border-border-dark px-4 py-3">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="font-display text-lg font-bold text-arang dark:text-kertas">BurjoOrder</h1>
-                </div>
-                <div class="flex items-center gap-2"></div>
-            </div>
-        </header>
-
-        <main class="flex-1 overflow-y-auto px-4 py-4 md:px-6 lg:px-8" id="main-content">
-            {{ $slot ?? '' }}
-        </main>
-    </div>
+<body class="font-body text-arang bg-paper dark:text-kertas dark:bg-ink transition-colors duration-200 min-h-screen">
+    {{ $slot ?? '' }}
+    @yield('content')
 
     <script>
         function applyTheme() {
@@ -83,39 +71,10 @@
         }
 
         document.addEventListener('livewire:navigated', function() {
-            initLazyImages();
+            applyTheme();
         });
 
-        function initLazyImages() {
-            document.querySelectorAll('img[data-src]').forEach(function(img) {
-                if ('IntersectionObserver' in window) {
-                    var observer = new IntersectionObserver(function(entries) {
-                        entries.forEach(function(entry) {
-                            if (entry.isIntersecting) {
-                                img.src = img.dataset.src;
-                                img.onload = function() { img.classList.add('loaded'); };
-                                img.onerror = function() {
-                                    img.classList.add('error');
-                                    img.style.background = '#1E2229';
-                                };
-                                img.removeAttribute('data-src');
-                                observer.unobserve(img);
-                            }
-                        });
-                    }, { rootMargin: '300px', threshold: 0.01 });
-                    observer.observe(img);
-                } else {
-                    img.src = img.dataset.src;
-                    img.classList.add('loaded');
-                    img.removeAttribute('data-src');
-                }
-            });
-        }
-
-        initLazyImages();
         applyTheme();
-
-        window.addEventListener('refresh-images', initLazyImages);
 
         window.addEventListener('notify', function(e) {
             var detail = e.detail;

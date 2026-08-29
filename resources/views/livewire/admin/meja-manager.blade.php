@@ -1,4 +1,4 @@
-<section id="table-manager" class="space-y-6 pt-6 border-t border-border-light dark:border-border-dark">
+<section id="table-manager" class="space-y-6 pt-6 border-t border-border-light dark:border-border-dark" wire:poll.5s="refreshMeja">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h3 class="text-xl font-display font-bold text-arang dark:text-paper">Manajemen Meja & QR Code</h3>

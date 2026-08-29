@@ -6,6 +6,7 @@ use App\Enums\MetodeBayar;
 use App\Enums\StatusBayar;
 use App\Enums\StatusPesanan;
 use App\Enums\StatusSesiMeja;
+use App\Events\StatsUpdated;
 use App\Events\StockUpdated;
 use App\Models\DetailPesanan;
 use App\Models\Meja;
@@ -108,6 +109,14 @@ class OrderService
         Cache::flush();
 
         $pesanan->load(['meja', 'details.menu', 'transaksi']);
+
+        // Dispatch stats update event for real-time dashboard
+        try {
+            event(new StatsUpdated('orders'));
+            event(new StatsUpdated('sales'));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return $pesanan;
     }

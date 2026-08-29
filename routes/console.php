@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Generate recaps daily at 00:00
 Schedule::command('recaps:generate')->dailyAt('00:00');
+
+// Clean up abandoned sesi_meja every 15 minutes
+Schedule::command('sesi:cleanup --hours=2')->everyFifteenMinutes();

@@ -1,3 +1,4 @@
+<div>
 @if (! $verified)
     <div class="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
         <div class="w-16 h-16 rounded-2xl bg-kertas dark:bg-surface border border-border-light dark:border-border-dark flex items-center justify-center mb-4">
@@ -8,8 +9,29 @@
         <a href="{{ route('meja.assign', $meja->token) }}" class="px-6 py-3 bg-accent hover:bg-accent-dark text-ink font-semibold text-sm rounded-xl transition-colors">Scan Ulang</a>
     </div>
 @else
-<div class="pb-32" wire:on.window="refreshStock" wire:poll.15s="refreshStock" x-data="{
-    activeCategory: null,
+<div class="pb-40" x-data="{
+    activeCategory: {{ $categories->first()->id ?? 'null' }},
+    categoryIds: {{ json_encode($categories->pluck('id')->toArray()) }},
+    init() {
+        const handler = () => this.highlightActive();
+        window.addEventListener('scroll', handler, { passive: true });
+        this.highlightActive();
+    },
+    highlightActive() {
+        for (const id of [...this.categoryIds].reverse()) {
+            const el = document.getElementById('kategori-' + id);
+            if (el && el.getBoundingClientRect().top <= 96) {
+                if (this.activeCategory !== id) {
+                    this.activeCategory = id;
+                }
+                return;
+            }
+        }
+    },
+    select(categoryId) {
+        this.activeCategory = categoryId;
+        this.highlightActive();
+    },
     scrollToActiveCategory() {
         if (!this.activeCategory) {
             return;
@@ -20,45 +42,19 @@
             const activeEl = this.$refs['pill-' + this.activeCategory];
 
             if (container && activeEl) {
-                const targetLeft = Math.max(0, activeEl.offsetLeft - 16);
-                container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+                container.scrollTo({ left: Math.max(0, activeEl.offsetLeft - 16), behavior: 'smooth' });
             }
         });
     }
-}" x-init="
-    activeCategory = {{ $categories->first()->id ?? 'null' }};
-    const categories = {{ json_encode($categories->pluck('id')->toArray()) }};
-    categories.forEach(function(categoryId) {
-        const el = document.getElementById('kategori-' + categoryId);
-        if (el) {
-            const obs = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        activeCategory = categoryId;
-                    }
-                });
-            }, { rootMargin: '-30% 0px -70% 0px', threshold: 0 });
-            obs.observe(el);
-        }
-    });
-" x-effect="scrollToActiveCategory()">
-
-{{-- Theme detection --}}
-<script>
-    document.addEventListener('livewire:navigated', function() {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.classList.toggle('dark', prefersDark);
-    });
-</script>
+}" x-effect="scrollToActiveCategory()">
 
     {{-- STICKY HEADER + CATEGORY PILLS --}}
     <div class="sticky top-0 z-30 bg-paper dark:bg-ink">
         {{-- HEADER --}}
         <div class="px-4 pt-4 pb-3 border-b border-border-light dark:border-border-dark">
             <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-11 h-11 rounded-full bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark shrink-0"></div>
-                    <h1 class="font-display font-semibold text-arang dark:text-kertas text-lg truncate">BurjoOrder</h1>
+                <div class="flex items-center gap-2 min-w-0">
+                    <h1 class="font-display font-semibold text-arang dark:text-kertas text-lg truncate">Menu</h1>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     @if(count($cart) > 0)
@@ -79,7 +75,7 @@
                         <a
                             href="#kategori-{{ $category->id }}"
                             x-ref="pill-{{ $category->id }}"
-                            @click="activeCategory = {{ $category->id }}"
+                            @click="select({{ $category->id }})"
                             :class="activeCategory === {{ $category->id }}
                                 ? 'bg-accent text-ink font-semibold border-accent shadow-sm'
                                 : 'bg-paper-card text-arang border-border-light dark:bg-surface dark:text-kertas dark:border-border-dark'"
@@ -113,20 +109,21 @@
                 @endphp
 
                 @if($categoryMenus->isNotEmpty())
-                    <div id="kategori-{{ $category->id }}" class="scroll-mt-20 mb-8">
+                    <div id="kategori-{{ $category->id }}" wire:key="category-{{ $category->id }}" class="scroll-mt-20 mb-8">
                         <h2 class="font-display font-bold text-lg text-arang dark:text-kertas mb-4">{{ $category->nama }}</h2>
 
-                        <div class="space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                             @foreach($categoryMenus as $item)
-                                <div class="flex gap-3 bg-paper-card dark:bg-surface rounded-2xl border border-border-light dark:border-border-dark p-3">
+                                <div wire:key="menu-{{ $item['id'] }}" class="flex gap-3 bg-paper-card dark:bg-surface rounded-2xl border border-border-light dark:border-border-dark p-3">
 
                                     <div class="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-xl bg-black/5 dark:bg-surface-alt overflow-hidden flex items-center justify-center">
                                         @if($item['cachedImage'])
                                             <img
-                                                data-src="{{ $item['cachedImage'] }}"
-                                                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect fill='%231E2229' width='400' height='400'/%3E%3C/svg%3E"
+                                                src="{{ $item['cachedImage'] }}"
                                                 alt="{{ $item['nama'] }}"
-                                                class="w-full h-full object-cover lazy-image"
+                                                loading="lazy"
+                                                class="w-full h-full object-cover"
+                                                onerror="this.onerror=null;this.style.background='#1E2229';"
                                             />
                                         @else
                                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted-dark dark:text-muted-light">
@@ -156,23 +153,6 @@
                                             </div>
 
                                              @if($item['is_available'] ?? false)
-                                                 @if(!empty($item['options']))
-                                                     <div class="mt-2 flex flex-wrap gap-2">
-                                                         @foreach($item['options'] as $opt)
-                                                             <label class="inline-flex items-center gap-1.5 text-xs font-medium text-arang dark:text-kertas cursor-pointer">
-                                                                 <input
-                                                                     type="radio"
-                                                                     wire:model="selectedOptions.{{ $item['id'] }}"
-                                                                     value="{{ $opt }}"
-                                                                     {{ ($selectedOptions[$item['id']] ?? $item['options'][0]) === $opt ? 'checked' : '' }}
-                                                                     class="w-3.5 h-3.5 accent-accent"
-                                                                 >
-                                                                 {{ ucfirst($opt) }}
-                                                             </label>
-                                                         @endforeach
-                                                     </div>
-                                                 @endif
-
                                                  @php
                                                      $cartLine = null;
                                                      $cartKey = null;
@@ -207,13 +187,13 @@
                                                          </button>
                                                      </div>
                                                  @else
-                                                     <button
-                                                         wire:click="addToCart({{ $item['id'] }})"
-                                                         wire:loading.attr="disabled"
-                                                         wire:target="addToCart({{ $item['id'] }})"
-                                                         class="shrink-0 w-9 h-9 rounded-xl bg-accent hover:bg-accent-dark text-ink flex items-center justify-center transition-colors"
-                                                         aria-label="Tambah {{ $item['nama'] }}"
-                                                     >
+                                                    <button
+                                                        wire:click="{{ empty($item['options']) ? 'addToCart('.$item['id'].')' : 'openOptionModal('.$item['id'].')' }}"
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="{{ empty($item['options']) ? 'addToCart('.$item['id'].')' : 'openOptionModal('.$item['id'].')' }}"
+                                                        class="shrink-0 w-9 h-9 rounded-xl bg-accent hover:bg-accent-dark text-ink flex items-center justify-center transition-colors"
+                                                        aria-label="Tambah {{ $item['nama'] }}"
+                                                    >
                                                          <span wire:loading.remove wire:target="addToCart({{ $item['id'] }})">
                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                                          </span>
@@ -238,21 +218,39 @@
         @endif
 
         @if($hasMoreMenus)
-            <div x-data x-intersect.margin.-200px="$wire.loadMoreMenus()" class="flex items-center justify-center py-8 text-muted-dark dark:text-muted-light">
-                <svg class="animate-spin w-5 h-5 {{ $loadingMore ? '' : 'opacity-0' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                <span class="ml-2 text-xs">Memuat menu lainnya…</span>
+            <div class="flex items-center justify-center py-8">
+                <button
+                    wire:click="loadMoreMenus"
+                    wire:loading.attr="disabled"
+                    class="px-5 py-2.5 rounded-xl border border-border-light dark:border-border-dark text-sm font-medium text-arang dark:text-kertas bg-paper-card dark:bg-surface hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                >
+                    <span wire:loading.remove>Muat lebih banyak</span>
+                    <span wire:loading>Memuat…</span>
+                </button>
+            </div>
+        @else
+            <div class="flex items-center justify-center py-8 text-muted-dark dark:text-muted-light">
+                <span class="text-xs">Semua menu telah dimuat</span>
             </div>
         @endif
     </div>
 
-    {{-- FLOATING CHECKOUT BUTTON --}}
+    {{-- FLOATING CHECKOUT BAR --}}
     @if(count($cart) > 0)
-        <div class="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 bg-gradient-to-t from-paper via-paper to-transparent dark:from-ink dark:via-ink pt-6">
-            <a
-                href="{{ route('customer.checkout', $meja) }}"
-                wire:navigate
-                class="mx-auto max-w-lg w-full flex items-center justify-between bg-accent hover:bg-accent-dark text-ink rounded-2xl shadow-elevated px-5 py-3.5 transition-all"
-            >
+        <div class="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 bg-gradient-to-t from-paper to-transparent dark:from-ink pt-4">
+            <div class="mx-auto max-w-lg flex items-center gap-2">
+                <button
+                    wire:click="clearCart"
+                    wire:confirm="Kosongkan seluruh keranjang?"
+                    class="shrink-0 w-12 h-12 rounded-2xl bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark text-muted-dark dark:text-muted-light flex items-center justify-center hover:text-cabai transition-colors"
+                    aria-label="Kosongkan keranjang"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+                <a
+                    href="{{ route('customer.checkout', $meja) }}"
+                    class="flex-1 flex items-center justify-between bg-accent hover:bg-accent-dark text-ink rounded-2xl shadow-elevated px-5 py-3.5 transition-all"
+                >
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-ink/10 flex items-center justify-center">
                         <span class="font-mono font-bold text-sm">{{ $cartCount }}</span>
@@ -261,7 +259,31 @@
                 </div>
                 <span class="font-mono font-bold text-sm">Rp {{ number_format((int) $cartTotal, 0, ',', '.') }}</span>
             </a>
+            </div>
         </div>
     @endif
     </div>
+
+    @if($optionModalItemId !== null)
+        <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4" wire:key="option-modal" wire:click.self="closeOptionModal">
+            <div x-data="{ selected: @js($pendingOption ?? '') }" class="w-full max-w-sm bg-paper-card dark:bg-surface rounded-t-2xl sm:rounded-2xl p-5 mb-0 sm:mb-4">
+                <h3 class="font-display font-semibold text-lg text-arang dark:text-kertas mb-1">Pilih Opsi</h3>
+                <p class="text-sm text-muted-dark dark:text-muted-light mb-4">{{ $optionModalName }}</p>
+                <div class="flex flex-col gap-2 mb-5">
+                    @foreach($optionModalOptions as $opt)
+                        <label class="flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer"
+                            :class="selected === '{{ $opt }}' ? 'bg-accent/10 border-accent' : 'border-border-light dark:border-border-dark'">
+                            <input type="radio" name="pendingOption" value="{{ $opt }}" x-model="selected" class="w-4 h-4 accent-accent">
+                            <span class="text-sm font-medium text-arang dark:text-kertas">{{ ucfirst($opt) }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" wire:click="closeOptionModal" class="flex-1 py-3 rounded-xl border border-border-light dark:border-border-dark text-arang dark:text-kertas font-medium">Batal</button>
+                    <button type="button" @click="$wire.confirmOptionAddWith(selected)" class="flex-1 py-3 rounded-xl bg-accent hover:bg-accent-dark text-ink font-semibold">Tambah</button>
+                </div>
+            </div>
+        </div>
+    @endif
 @endif
+</div>

@@ -31,7 +31,7 @@
                 <div class="space-y-3">
                     <div class="w-full h-36 bg-kertas dark:bg-arang rounded-xl overflow-hidden flex items-center justify-center relative">
                         @if($menu['foto'])
-                            <img src="{{ asset('storage/' . $menu['foto']) }}" alt="{{ $menu['nama'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <img src="{{ app(\App\Services\ImageCacheService::class)->url($menu['foto']) }}" alt="{{ $menu['nama'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                         @else
                             <div class="text-center p-4 text-muted-dark dark:text-muted-light">
                                 <svg class="w-10 h-10 mx-auto opacity-50 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -96,7 +96,7 @@
         @php
             $editMenuFoto = $editingMenuId ? (\App\Models\Menu::find($editingMenuId)?->foto) : null;
         @endphp
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-data="menuImageCropper()" x-init="previewUrl = '{{ $editMenuFoto ? asset('storage/'.$editMenuFoto) : '' }}'" x-transition.opacity>
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-data="menuImageCropper()" x-init="previewUrl = '{{ $editMenuFoto ? app(\App\Services\ImageCacheService::class)->url($editMenuFoto) : '' }}'" x-transition.opacity>
             <div class="bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl relative">
                 <div class="flex items-center justify-between border-b border-border-light dark:border-border-dark pb-3">
                     <h3 class="text-lg font-display font-bold text-arang dark:text-paper">
