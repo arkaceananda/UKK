@@ -5,7 +5,7 @@
     @forelse($mejas as $meja)
         <div wire:key="qr-{{ $meja['id'] }}" class="border border-border-light dark:border-border-dark rounded-xl p-4 text-center bg-paper-card dark:bg-surface transition-all duration-300 hover:shadow-md {{ $updatedMejaId === $meja['id'] ? 'ring-2 ring-accent shadow-lg' : '' }}">
             <div class="mb-2">
-                <span class="text-lg font-bold text-ink dark:text-kertas">Meja {{ $meja['nomor'] }}</span>
+                <span class="text-lg font-bold text-arang dark:text-paper">Meja {{ $meja['nomor'] }}</span>
                 @if($meja['is_occupied'])
                     <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cabai text-white">
                         Terpakai

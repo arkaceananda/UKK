@@ -70,4 +70,24 @@ class OrderServiceTest extends TestCase
         $this->assertSame(2 * $menu->harga, (float) $pesanan->total_harga);
         $this->assertSame(8, $menu->fresh()->stok);
     }
+
+    public function test_checkout_stores_catatan_to_database(): void
+    {
+        $meja = Meja::factory()->create(['status' => StatusMeja::Aktif, 'is_occupied' => true]);
+        $menu = $this->menu();
+
+        $pesanan = app(OrderService::class)->checkout(
+            $meja,
+            [['menu_id' => $menu->id, 'jumlah' => 1]],
+            tableToken: $meja->token,
+            catatan: 'Extra pedas, tidak pakai kecap',
+        );
+
+        $this->assertDatabaseHas('pesanan', [
+            'id' => $pesanan->id,
+            'meja_id' => $meja->id,
+            'catatan' => 'Extra pedas, tidak pakai kecap',
+        ]);
+        $this->assertSame('Extra pedas, tidak pakai kecap', $pesanan->fresh()->catatan);
+    }
 }

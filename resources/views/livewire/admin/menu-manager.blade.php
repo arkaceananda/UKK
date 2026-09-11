@@ -1,10 +1,23 @@
 <section id="menu-manager" class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-light dark:border-border-dark pb-4">
         <div>
-            <h3 class="text-xl font-display font-bold text-arang dark:text-paper">Manajemen Menu</h3>
+            <div class="flex items-center gap-2">
+                <h3 class="text-xl font-display font-bold text-arang dark:text-paper">Manajemen Menu</h3>
+                @if($this->habisCount > 0)
+                    <span class="px-2.5 py-0.5 text-xs font-bold rounded-full {{ $this->restockBadgeCount > 0 ? 'bg-cabai text-white animate-pulse' : 'bg-cabai/10 text-cabai border border-cabai/20' }}">
+                        {{ $this->habisCount }} Habis
+                        @if($this->restockBadgeCount > 0) · {{ $this->restockBadgeCount }} minta restock @endif
+                    </span>
+                @endif
+            </div>
             <p class="text-xs text-muted-dark dark:text-muted-light">Daftar item kuliner Burjo dalam bentuk card interaktif.</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
+            @if($this->habisCount > 0)
+                <button wire:click="toggleRestockFilter" class="px-3 py-2 rounded-xl text-xs font-bold border transition-colors {{ $filterRestockOnly ? 'bg-cabai text-white border-cabai' : 'bg-paper-card dark:bg-surface border-cabai/30 text-cabai hover:bg-cabai/5' }}">
+                    {{ $filterRestockOnly ? 'Tampilkan Semua' : 'Hanya Perlu Restock ('.$this->restockBadgeCount.')' }}
+                </button>
+            @endif
             <input 
                 wire:model.live.debounce.300ms="searchMenu" 
                 type="text" 
@@ -24,6 +37,24 @@
         </div>
     </div>
 
+    @if($this->restockBadgeCount > 0)
+        <div class="border border-cabai/30 bg-cabai/5 dark:bg-cabai/10 rounded-2xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="w-2 h-2 rounded-full bg-cabai animate-pulse"></span>
+                <h4 class="text-sm font-bold text-cabai">Perlu restock — permintaan dari kasir</h4>
+                <span class="text-xs text-muted-dark dark:text-muted-light">({{ $this->restockBadgeCount }} menu)</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                @foreach($this->pendingRestockMenus as $rm)
+                    <button wire:click="openEditMenuModal({{ $rm['id'] }})" class="px-3 py-1.5 rounded-full bg-paper-card dark:bg-surface border border-cabai/20 text-xs font-medium text-arang dark:text-paper hover:bg-cabai hover:text-white transition-colors">
+                        {{ $rm['nama'] }} <span class="text-muted-dark dark:text-muted-light font-normal">· {{ $rm['kategori'] ?? '—' }}</span> <span class="ml-1 text-[10px] opacity-70">oleh {{ $rm['by'] }}</span>
+                    </button>
+                @endforeach
+            </div>
+            <p class="text-[11px] text-muted-dark dark:text-muted-light mt-2">Klik menu untuk restock (ubah stok/status jadi Tersedia — flag otomatis hilang).</p>
+        </div>
+    @endif
+
     {{-- Menu Cards Grid --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         @forelse($menus as $menu)
@@ -41,6 +72,9 @@
                         <span class="absolute top-2 right-2 px-2.5 py-0.5 text-xs font-semibold rounded-full {{ $menu['status'] === \App\Enums\StatusMenu::Tersedia->value ? 'bg-daun/20 text-daun border border-daun/30' : 'bg-cabai/20 text-cabai border border-cabai/30' }}">
                             {{ $menu['status'] === \App\Enums\StatusMenu::Tersedia->value ? 'Tersedia' : 'Habis' }}
                         </span>
+                        @if(!empty($menu['restockRequested']))
+                            <span class="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-bold rounded-full bg-cabai text-white shadow">Minta restock @if(!empty($menu['restockBy']))· {{ $menu['restockBy'] }}@endif</span>
+                        @endif
                     </div>
 
                     <div>

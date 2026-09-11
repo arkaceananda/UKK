@@ -69,37 +69,46 @@ new #[Layout('layouts.guest')] class extends Component
     }
 }; ?>
 
-<div>
-    <form wire:submit="resetPassword">
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+<div class="min-h-screen flex w-full">
+    <div class="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 bg-paper dark:bg-ink">
+        <div class="w-full max-w-sm mx-auto">
+            <div class="flex items-center gap-2.5 mb-10">
+                <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
+                    <svg class="w-5 h-5 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <span class="font-display font-bold text-lg text-arang dark:text-kertas">BurjoOrder</span>
+            </div>
+
+            <h1 class="font-display font-bold text-2xl text-arang dark:text-kertas">Atur ulang password</h1>
+            <p class="text-muted-dark dark:text-muted-light text-sm mt-2 mb-6">Masukkan email dan password baru. Link hanya berlaku 60 menit — jangan bagikan link email ini.</p>
+
+            <div class="bg-paper-card dark:bg-surface border border-border-light dark:border-border-dark rounded-lg shadow-sm p-6">
+                <form wire:submit="resetPassword" class="space-y-5">
+                    <div>
+                        <x-input-label for="email" :value="__('Email')" />
+                        <x-text-input wire:model="email" id="email" type="email" name="email" required autofocus autocomplete="username" placeholder="nama@burjo.com" />
+                        <x-input-error :messages="$errors->get('email')" class="mt-1.5" />
+                    </div>
+                    <div>
+                        <x-input-label for="password" :value="__('Password baru')" />
+                        <x-text-input wire:model="password" id="password" type="password" name="password" required autocomplete="new-password" placeholder="Minimal 8 karakter" />
+                        <x-input-error :messages="$errors->get('password')" class="mt-1.5" />
+                    </div>
+                    <div>
+                        <x-input-label for="password_confirmation" :value="__('Konfirmasi password')" />
+                        <x-text-input wire:model="password_confirmation" id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Ulangi password baru" />
+                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1.5" />
+                    </div>
+
+                    <x-primary-button class="w-full justify-center">
+                        {{ __('Simpan password baru') }}
+                    </x-primary-button>
+                </form>
+            </div>
+            <p class="text-xs text-muted-dark dark:text-muted-light text-center mt-6">Setelah berhasil, kamu akan diarahkan ke halaman masuk.</p>
         </div>
-
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input wire:model="password" id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input wire:model="password_confirmation" id="password_confirmation" class="block mt-1 w-full"
-                          type="password"
-                          name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Reset Password') }}
-            </x-primary-button>
-        </div>
-    </form>
+    </div>
+    <div class="hidden lg:flex lg:w-1/2 items-center justify-center bg-kertas dark:bg-surface">
+        <dotlottie-player src="{{ asset('storage/animations/login.lottie') }}" background="transparent" speed="1" loop autoplay class="w-[280px] h-[280px]"></dotlottie-player>
+    </div>
 </div>

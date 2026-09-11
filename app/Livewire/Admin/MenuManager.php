@@ -6,7 +6,11 @@ use App\Enums\StatusMenu;
 use App\Models\KategoriMenu;
 use App\Models\Menu;
 use App\Services\ImageCacheService;
+use App\Services\RestockService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -18,6 +22,8 @@ class MenuManager extends Component
     public string $searchMenu = '';
 
     public string $filterKategori = '';
+
+    public bool $filterRestockOnly = false;
 
     public bool $showMenuModal = false;
 
@@ -57,6 +63,31 @@ class MenuManager extends Component
     public int $totalMenus = 0;
 
     protected $listeners = ['menuCreated' => 'resetMenus', 'menuDeleted' => 'resetMenus'];
+
+    #[Computed]
+    public function restockBadgeCount(): int
+    {
+        return RestockService::countPending();
+    }
+
+    #[Computed]
+    public function habisCount(): int
+    {
+        return RestockService::habisCount();
+    }
+
+    #[On('echo:admin-channel,RestockRequested')]
+    public function onRestockRequested(): void
+    {
+        $this->resetMenus();
+        $this->dispatch('notify', message: 'Kasir minta restock menu habis!', type: 'info');
+    }
+
+    public function clearRestockFlag(int $menuId): void
+    {
+        RestockService::clear($menuId);
+        $this->dispatch('notify', message: 'Flag restock dibersihkan.', type: 'success');
+    }
 
     public function openCreateMenuModal(): void
     {
@@ -137,8 +168,23 @@ class MenuManager extends Component
         }
 
         if ($this->editingMenuId) {
-            Menu::findOrFail($this->editingMenuId)->update($data);
-            $this->dispatch('notify', message: 'Menu berhasil diperbarui!', type: 'success');
+            $wasRequested = RestockService::isRequested($this->editingMenuId);
+            $menu = Menu::findOrFail($this->editingMenuId);
+            // auto-fix: jika stok diisi >0, paksa status jadi Tersedia
+            if ($data['stok'] > 0 && $status === StatusMenu::Habis) {
+                $status = StatusMenu::Tersedia;
+                $data['status'] = $status;
+            }
+            $menu->update($data);
+            $fresh = $menu->fresh();
+            if ($wasRequested || $fresh->status === StatusMenu::Tersedia || $fresh->stok > 0) {
+                RestockService::clear($fresh->id);
+            }
+            if ($wasRequested) {
+                $this->dispatch('notify', message: 'Restock "'.$fresh->nama.'" selesai — flag kasir dibersihkan.', type: 'success');
+            } else {
+                $this->dispatch('notify', message: 'Menu berhasil diperbarui!', type: 'success');
+            }
         } else {
             Menu::create($data);
             $this->dispatch('notify', message: 'Menu baru berhasil ditambahkan!', type: 'success');
@@ -179,6 +225,28 @@ class MenuManager extends Component
         $this->resetMenus();
     }
 
+    public function toggleRestockFilter(): void
+    {
+        $this->filterRestockOnly = ! $this->filterRestockOnly;
+        $this->resetMenus();
+    }
+
+    #[Computed]
+    public function pendingRestockMenus(): Collection
+    {
+        return Menu::where('status', StatusMenu::Habis->value)
+            ->with('kategori')
+            ->get()
+            ->filter(fn (Menu $m) => RestockService::isRequested($m->id))
+            ->map(fn (Menu $m) => [
+                'id' => $m->id,
+                'nama' => $m->nama,
+                'kategori' => $m->kategori?->nama,
+                'by' => RestockService::get($m->id)['kasir_name'] ?? 'Kasir',
+            ])
+            ->values();
+    }
+
     protected function loadMenuPage(): void
     {
         $query = Menu::with('kategori');
@@ -191,11 +259,21 @@ class MenuManager extends Component
             $query->where('kategori_id', $this->filterKategori);
         }
 
+        if ($this->filterRestockOnly) {
+            $ids = Menu::where('status', StatusMenu::Habis->value)
+                ->get()
+                ->filter(fn (Menu $m) => RestockService::isRequested($m->id))
+                ->pluck('id')->all();
+            $query->whereIn('id', $ids ?: [-1]);
+        }
+
         $this->totalMenus = (clone $query)->count();
 
         $pageItems = $query->orderBy('nama')
             ->forPage($this->menuPage, $this->menuPerPage)
-            ->get();
+            ->get()
+            ->sortByDesc(fn (Menu $m) => RestockService::isRequested($m->id) ? 1 : 0)
+            ->values();
 
         $mapped = $pageItems->map(fn (Menu $menu) => [
             'id' => $menu->id,
@@ -206,6 +284,8 @@ class MenuManager extends Component
             'stok' => $menu->stok,
             'status' => $menu->status->value,
             'kategori' => $menu->kategori?->nama,
+            'restockRequested' => RestockService::isRequested($menu->id),
+            'restockBy' => RestockService::get($menu->id)['kasir_name'] ?? null,
         ])->all();
 
         if ($this->menuPage === 1) {

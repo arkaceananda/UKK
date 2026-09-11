@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatusMenu;
+use App\Services\RestockService;
 use Database\Factories\MenuFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,6 +55,19 @@ class Menu extends Model
         if ($this->stok === 0) {
             $this->update(['status' => StatusMenu::Habis]);
         }
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (self $menu) {
+            if ($menu->status === StatusMenu::Tersedia || $menu->stok > 0) {
+                RestockService::clear($menu->id);
+            }
+        });
+
+        static::deleted(function (self $menu) {
+            RestockService::clear($menu->id);
+        });
     }
 
     public function increaseStock(int $jumlah): void
