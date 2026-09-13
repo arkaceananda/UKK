@@ -1,58 +1,136 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# BurjoOrder
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi pemesanan burjo — Laravel 13 + Livewire 3 + Reverb, berjalan di atas Laravel Sail (Docker) dengan FrankenPHP worker mode dan Cloudflare Tunnel.
 
-## About Laravel
+## Prasyarat
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Docker Desktop terinstall dan **running**
+- PHP >= 8.3 & Composer (untuk `composer dev` di host)
+- Bun (package manager frontend)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Menjalankan Aplikasi
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Pastikan Docker aktif
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Buka Docker Desktop, atau cek lewat terminal:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+docker info
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Kalau error `Cannot connect to the Docker daemon`, jalankan dulu Docker Desktop-nya.
 
-## Contributing
+### 2. Setup awal (sekali saja)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer install
+cp .env.example .env      # jika belum ada .env
+php artisan key:generate
+bun install --ignore-scripts
+```
 
-## Code of Conduct
+Atau cukup:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+composer setup
+```
 
-## Security Vulnerabilities
+### 3. Jalankan container (DB, Redis, FrankenPHP, Cloudflare Tunnel)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+vendor/bin/sail up -d
+```
 
-## License
+Service yang akan jalan:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Service | Port | Keterangan |
+|---|---|---|
+| `laravel.test` | 80 | Sail default (PHP-FPM dev) |
+| `frankenphp` | **8081** | App utama (worker mode) → http://localhost:8081 |
+| `cloudflared` | — | Tunnel publik via trycloudflare.com |
+| `pgsql` | 5432 | PostgreSQL 18 |
+| `redis` | 6379 | Redis |
+
+### 4. Migrasi & seed database (jika belum)
+
+```bash
+vendor/bin/sail artisan migrate:fresh --seed
+```
+
+### 5. Jalankan proses pendukung
+
+Pilih salah satu sesuai kebutuhan:
+
+**a. Development lokal (dengan HMR):**
+
+```bash
+composer dev
+```
+
+Menjalankan queue worker, Reverb (port 8080), Pail, dan Vite dev server. Cocok untuk akses **localhost:8081 saja** — CSS/JS akan rusak jika diakses via tunnel.
+
+**b. Demo / akses via Cloudflare Tunnel:**
+
+```bash
+composer tunnel
+```
+
+Menjalankan queue worker, Reverb, Pail, dan `bun run build --watch` (asset di-build, tanpa dev server). Aman diakses dari URL tunnel maupun localhost.
+
+### 6. Akses aplikasi
+
+- **Lokal**: http://localhost:8081
+- **Publik** (pengganti ngrok), cek URL tunnel:
+
+```bash
+docker compose logs cloudflared | grep trycloudflare
+```
+
+Contoh output: `https://random-words.trycloudflare.com`
+
+> Jika butuh absolute URL (misal callback Midtrans), update `APP_URL` di `.env` dengan URL tunnel tersebut.
+
+## Akun Seed
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@burjo.test | password |
+| Kasir | kasir@burjo.test | password |
+
+## Hal Penting (FrankenPHP Worker Mode)
+
+Aplikasi live di memori (bukan request-per-proses), jadi:
+
+- Setelah mengubah `.env`, config, atau kode provider → restart:
+  ```bash
+  vendor/bin/sail compose restart frankenphp
+  ```
+- Setelah mengubah Caddyfile/Dockerfile frankenphp → rebuild:
+  ```bash
+  docker compose up -d --build frankenphp
+  ```
+- URL trycloudflare **berubah setiap kali container `cloudflared` di-recreate** (restart biasa tidak mengubah URL).
+
+## Testing
+
+```bash
+vendor/bin/sail artisan test
+```
+
+## Lint & Static Analysis
+
+```bash
+vendor/bin/sail bin pint --dirty
+vendor/bin/phpstan
+```
+
+## Troubleshooting
+
+| Masalah | Solusi |
+|---|---|
+| Port 8080/8081/443 sudah dipakai | Matikan proses lain yang memakainya, atau set `FRANKENPHP_PORT=xxxx` di `.env` |
+| `Class "Redis" not found` | Ekstensi redis hilang dari build image → `docker compose up -d --build frankenphp` |
+| Halaman redirect ke HTTPS lalu gagal | Pastikan mount `docker/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile` masih ada di `compose.yaml` |
+| Perubahan `.env` tidak berefek | Restart frankenphp (worker mode cache config) |
+| CSS/JS rusak via tunnel | Vite dev server tidak bisa diakses dari tunnel → gunakan `composer tunnel` (build mode), pastikan tidak ada file `public/hot` |
+| Asset/lottie 404 | Pastikan symlink `public/storage` relatif (`-> ../storage/app/public`) |

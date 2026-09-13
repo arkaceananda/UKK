@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
@@ -24,4 +25,8 @@ Broadcast::channel('kitchen', function () {
 
 Broadcast::channel('admin.stats', function () {
     return true;
+});
+
+Broadcast::channel('admin-channel', function ($user) {
+    return $user && $user->role === UserRole::Admin;
 });

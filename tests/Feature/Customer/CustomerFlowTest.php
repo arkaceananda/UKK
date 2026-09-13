@@ -108,6 +108,28 @@ class CustomerFlowTest extends TestCase
         $this->assertLessThanOrEqual(1, $activeCount, 'Scanning twice should not create duplicate active sessions');
     }
 
+    public function test_scan_to_checkout_saves_notes_as_catatan(): void
+    {
+        $meja = $this->createAktifMeja();
+        $menu = $this->createAvailableMenu(stok: 5, harga: 15000);
+
+        $this->scanQr($meja)->assertRedirect();
+
+        Livewire::test(Checkout::class, ['meja' => $meja])
+            ->set('metodeBayar', MetodeBayar::Tunai->value)
+            ->set('notes', 'Tambah bumbu, kurangnya gula')
+            ->call('addToCart', $menu->id)
+            ->call('checkout');
+
+        $pesanan = Pesanan::where('meja_id', $meja->id)->first();
+        $this->assertNotNull($pesanan, 'Order (and pesanan) must be created during checkout');
+        $this->assertSame('Tambah bumbu, kurangnya gula', $pesanan->catatan);
+        $this->assertDatabaseHas('pesanan', [
+            'meja_id' => $meja->id,
+            'catatan' => 'Tambah bumbu, kurangnya gula',
+        ]);
+    }
+
     public function test_menu_page_hydrates_existing_cart_and_shows_decrement_controls(): void
     {
         $meja = $this->createAktifMeja();

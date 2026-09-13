@@ -19,7 +19,7 @@ use App\Models\Meja;
 use App\Models\Pesanan;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome');
+Route::redirect('/', '/login');
 
 Route::get('/dashboard', function () {
     if (auth()->check()) {
